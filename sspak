@@ -88,16 +88,13 @@ class Action_save {
 		$this->getassets($webroot, $details['assets_path'], $assetsFile);
 
 		// Create the sspak file
-		$webroot->exec(array('tar', '-C', $buildFolder, '-cf', "$buildFolder.sspak", basename($dbFile), basename($assetsFile)));
+		$webroot->exec(
+			array('tar', '-C', $buildFolder, '-c', '-f','-', basename($dbFile), basename($assetsFile)),
+			array('outputFile' => $file)
+		);
 		
 		// Remove the build folder
 		$webroot->unlink($buildFolder);
-
-		// Download the sspak file
-		$webroot->download("$buildFolder.sspak", $file);
-
-		// Remove it from the server
-		$webroot->unlink("$buildFolder.sspak");
 	}
 
 	function getdb_MySQLDatabase($webroot, $conf, $filename) {
@@ -107,7 +104,7 @@ class Action_save {
 		$hostArg = (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') ? escapeshellarg("--host=".$conf['db_server']) : '';
 		$filenameArg = escapeshellarg($filename);
 
-		return $webroot->exec("mysqldump $usernameArg $passwordArg $hostArg $databaseArg | gzip -c > $filenameArg");
+		return $webroot->exec("mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick $usernameArg $passwordArg $hostArg $databaseArg | gzip -c > $filenameArg");
 	}
 
 	function getassets($webroot, $assetsPath, $filename) {
@@ -145,51 +142,54 @@ class Action_load {
 
 		if(!file_exists($file)) throw new Exception( "File '$file' don't exist.");
 
+		// If local, we can just use the sspak file directly
+		if($webroot->isLocal()) {
+			$sspakFile = $file;
 
-		// Create a build folder for the sspak file
-		$buildFolder = "/tmp/sspak-" . rand(100000,999999);
-		$webroot->exec(array('mkdir', $buildFolder));
+		} else {
+			// Give a name for sspakFile /tmp
+			$sspakFile = "/tmp/sspak-" . rand(100000,999999) . ".sspak";
 
-		// Upload the sspak file
-		$webroot->upload($file, "$buildFolder.sspak");
+			// Upload the sspak file
+			$webroot->upload($file, $sspakFile);
+		}
 
-		// Extract the sspak file
-		$webroot->exec(array('tar', '-C', $buildFolder, '-xf', "$buildFolder.sspak"));
+		// Extract DB direct from sspak file
+		$this->$dbFunction($webroot, $details, $sspakFile);
 
-		$dbFile = "$buildFolder/database.sql.gz";
-		$assetsFile = "$buildFolder/assets.tar.gz";
-
-		// Extract DB
-		$this->$dbFunction($webroot, $details, $dbFile);
-
-		// Extract Assets
-		$this->putassets($webroot, $details['assets_path'], $assetsFile);
-
-		// Remove the build folder
-		$webroot->unlink($buildFolder);
+		// Extract Assets direct from sspak file
+		$this->putassets($webroot, $details['assets_path'], $sspakFile);
 
 		// Remove sspak from the server
-		$webroot->unlink("$buildFolder.sspak");
+		if($sspakFile != $file) $webroot->unlink($sspakFile);
 	}
 
 
-	function putdb_MySQLDatabase($webroot, $conf, $filename) {
+	function putdb_MySQLDatabase($webroot, $conf, $sspakFile) {
 		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
 		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
 		$databaseArg = escapeshellarg($conf['db_database']);
 		$hostArg = (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') ? escapeshellarg("--host=".$conf['db_server']) : '';
-		$filenameArg = escapeshellarg($filename);
+		$sspakFileArg = escapeshellarg($sspakFile);
 
-		return $webroot->exec("gunzip -c $filenameArg | mysql $usernameArg $passwordArg $hostArg $databaseArg");
+		$webroot->exec("echo 'create database if not exists `" . addslashes($conf['db_database']) . "`' | mysql $usernameArg $passwordArg $hostArg");
+		return $webroot->exec("tar Oxf $sspakFileArg --include database.sql.gz | gunzip -c | mysql $usernameArg $passwordArg $hostArg $databaseArg");
 	}
 
-	function putassets($webroot, $assetsPath, $filename) {
+	function putassets($webroot, $assetsPath, $sspakFile) {
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
 		$assetsBaseArg = escapeshellarg(basename($assetsPath));
 		$assetsBaseOldArg = escapeshellarg(basename($assetsPath).'.old');
-		$filenameArg = escapeshellarg($filename);
+		$sspakFileArg = escapeshellarg($sspakFile);
 
-		return $webroot->exec("cd $assetsParentArg && mv $assetsBaseOldArg && tar xzf $filenameArg $assetsBaseArg && rm -rf $assetsBaseOldArg");
+		// Move existing assets to assets.old
+		$webroot->exec("if [ -d $assetsBaseArg ]; then mv $assetsBaseArg $assetsBaseOldArg; fi");
+
+		// Extract assets
+		$webroot->exec("tar Oxf $sspakFileArg --include assets.tar.gz | tar xzf - -C $assetsParentArg");
+
+		// Remove assets.old
+		$webroot->exec("if [ -d $assetsBaseOldArg ]; then rm -rf $assetsBaseOldArg; fi");
 	}
 
 }
@@ -226,6 +226,10 @@ class Webroot {
 
 	function setSudo($sudo) {
 		$this->sudo = $sudo;
+	}
+
+	function isLocal() {
+		return $this->server == null;
 	}
 
 	/**
@@ -290,9 +294,9 @@ class Webroot {
 	 * Execute a command on the relevant server
 	 * @param  string $command Shell command, either a fully escaped string or an array
 	 */
-	function exec($command, $throwException = true, $inputContent = null) {
-		if($this->server) return $this->executor->execRemote($this->server, $command, $throwException, $inputContent);
-		else return $this->executor->execLocal($command, $throwException, $inputContent);
+	function exec($command, $options = array()) {
+		if($this->server) return $this->executor->execRemote($this->server, $command, $options);
+		else return $this->executor->execLocal($command, $options);
 	}
 
 	/**
@@ -312,7 +316,7 @@ class Webroot {
 				$stdin = fopen( 'php://stdin', 'r');
 				$password = fgets($stdin);
 
-				return $this->exec("sudo -S -p '' -u " . escapeshellarg($this->sudo) . " " . $command, true, $password);
+				return $this->exec("sudo -S -p '' -u " . escapeshellarg($this->sudo) . " " . $command, array('inputContent' => $password));
 			}
 		
 		} else {
@@ -325,11 +329,12 @@ class Webroot {
  * Responsible for executing commands
  */
 class Executor {
-	/**
-	 * Turn a command into a sudo command
-	 */
-	function makeSudoCommand($command, $sudoUser) {
-	}
+	protected $defaultOptions = array(
+		'throwException' => true,
+		'inputContent' => null,
+		'inputFile' => null,
+		'outputFile' => null,
+	);
 
 	/**
 	 * @param string $command The command
@@ -338,43 +343,52 @@ class Executor {
 	 * @param boolean $inputContent Content for STDIN. Otherwise the parent script's STDIN is used
 	 * @return A map containing 'return', 'output', and 'error'
 	 */
-	function execLocal($command, $throwException = true, $inputContent = null) {
+	function execLocal($command, $options = array()) {
+		$options = array_merge($this->defaultOptions, $options);
+
 		if(is_array($command)) $command = $this->commandArrayToString($command);
 
 		$pipes = array();
 		$pipeSpec = array(
-			0 => $inputContent ? array('pipe', 'r') : STDIN,
+			0 => STDIN,
 			1 => array('pipe', 'w'),
 			2 => STDERR,
 		);
+
+		// Alternatives
+		if($options['inputContent']) $pipeSpec[0] = array('pipe', 'r');
+		if($options['outputFile']) $pipeSpec[1] = array('file', $options['outputFile'], 'w');
+
 		$process = proc_open($command, $pipeSpec, $pipes);
 
-		if($inputContent) fwrite($pipes[0], $inputContent);
+		if($options['inputContent']) fwrite($pipes[0], $options['inputContent']);
 	
-		$output = stream_get_contents($pipes[1]);
-		//$error = stream_get_contents($pipes[2]);
+		$result = array();
 
-    	fclose($pipes[1]);
-    	//fclose($pipes[2]);
-
-    	$return = proc_close($process);
-	
-		if($throwException && $return != 0)	{
-			throw new Exception("Command: $command\nExecution failed: returned $return.\n"
-				. "Output:\n$output");
+		if(isset($pipes[1])) {
+			$result['output'] = stream_get_contents($pipes[1]);
+			fclose($pipes[1]);
+		}
+		if(isset($pipes[2])) {
+			$result['error'] = stream_get_contents($pipes[2]);
+			fclose($pipes[2]);
 		}
 
-    	return array(
-    		'return' => $return,
-    		'output' => $output,
-    		//'error' => $error,
-    	);
+		$result['return'] = proc_close($process);
+
+		if($options['throwException'] && $result['return'] != 0)	{
+			throw new Exception("Command: $command\nExecution failed: returned {$result['return']}.\n"
+				. "Output:\n{$result['output']}");
+		}
+
+		return $result;
 	}
 
-	function execRemote($server, $command, $throwException = true, $inputContent = null) {
+	function execRemote($server, $command, $options = array()) {
 		if(is_array($command)) $command = $this->commandArrayToString($command);
 
-		return $this->execLocal(array("ssh", "-t", $server, $command), $throwException, $inputContent);
+		if(!empty($options['outputFile'])) return $this->execLocal(array("ssh", $server, $command), $options);
+		else return $this->execLocal(array("ssh", "-t", $server, $command), $options);
 	}
 
 	/**
