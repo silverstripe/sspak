@@ -279,6 +279,59 @@ class Action_load {
 
 
 /**
+ * Install an .sspak into a new environment.
+ */
+class Action_install {
+	function go($args, $executor) {
+		// Set-up
+		$file = $args->unnamed(0);
+		$webrootDir = $args->unnamed(1);
+		$sspak = new SSPakFile($file, $executor);
+		$webroot = new Webroot($webrootDir, $executor);
+		$webroot->setSudo($args->sudo('to'));
+		$pakParts = $args->pakParts();
+
+		// Validation
+		if($webroot->exists($webroot->getPath())) throw new Exception( "Webroot '$webrootDir' already exists.");
+		if(!file_exists($file)) throw new Exception( "File '$file' doesn't exist.");
+
+		// Create new dir
+		$webroot->exec(array('mkdir', $webroot->getPath()));
+
+		if($sspak->contains('git-remote')) {
+			$details = $sspak->gitRemoteDetails();
+			$webroot->putgit($details);
+		}
+
+		// Ensure the pakfile is on the destination server
+		// If local, we can just use the sspak file directly
+		if($webroot->isLocal()) {
+			$sspakFile = $file;
+
+		} else {
+			// Give a name for sspakFile /tmp
+			$sspakFile = "/tmp/sspak-" . rand(100000,999999) . ".sspak";
+
+			// Upload the sspak file
+			$webroot->upload($file, $sspakFile);
+		}
+
+		// Push database, if necessary
+		if($pakParts['db'] && $sspak->contains('database.sql.gz')) {
+			$webroot->putdb($sspakFile);
+		}
+
+		// Push assets, if neccessary
+		if($pakParts['assets'] && $sspak->contains('assets.tar.gz')) {
+			$webroot->putassets($sspakFile);
+		}
+
+		// Remove sspak from the server
+		if($sspakFile != $file) $webroot->unlink($sspakFile);
+	}
+}
+
+/**
  * Transfer between environments without creating an sspak file
  */
 class Action_transfer {
@@ -400,6 +453,33 @@ class SSPakFile extends FilesystemEntity {
 		foreach($items as $item) if ($item == $file) return true;
 		return false;
 	}
+
+	/**
+	 * Returns the content of a file from this sspak
+	 */
+	function content($file) {
+		$result = $this->exec(array("tar", "Oxf", $this->path, "--include", $file));
+		return $result['output'];
+	}
+
+	/**
+	 * Extracts the git remote details and reutrns them as a map
+	 */
+	function gitRemoteDetails() {
+		$content = $this->content('git-remote');
+		$details = array();
+		foreach(explode("\n", trim($content)) as $line) {
+			if(!$line) continue;
+
+			if(preg_match('/^([^ ]+) *= *(.*)$/', $line, $matches)) {
+				$details[$matches[1]] = $matches[2];
+			} else {
+				throw new Exception("Bad line '$line'");
+			}
+		}
+		return $details;
+	}
+
 }
 
 /**
@@ -530,6 +610,18 @@ class Webroot extends FilesystemEntity {
 
 		// Remove assets.old
 		$this->exec("if [ -d $assetsBaseOldArg ]; then rm -rf $assetsBaseOldArg; fi");
+	}
+
+	/**
+	 * Load a git remote into this webroot.
+	 * It expects that this remote is an empty directory.
+	 * 
+	 * @param array $details Map of git details
+	 */
+	function putgit($details) {
+		$this->exec(array('git', 'clone', $details['remote'], $this->path));
+		$this->exec("cd $this->path && git checkout " . escapeshellarg($details['branch']));
+		return true;
 	}
 }
 

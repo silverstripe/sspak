@@ -56,6 +56,10 @@ Load only the assets:
 
     $> sspak load --assets dev.sspak ~/Sites/devsite
 
+Install a new site from an sspak (needs to contain a git-remote):
+
+    $> sspak install newsite.sspak ~/Sites/newsite
+
 Caveats
 -------
 
