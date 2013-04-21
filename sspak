@@ -43,12 +43,11 @@ class Args {
 			}
 		}
 
-		if(sizeof($this->unnamedArgs) != 3) {
-			echo "Usage: {$_SERVER['argv'][0]} (action) (from) (to)\n\nAction can be 'save', 'load', or 'transfer'.\n";
-			exit(1);
-		}
-
 		$this->action = array_shift($this->unnamedArgs);
+	}
+
+	function unshiftUnnamed($arg) {
+		array_unshift($this->unnamedArgs, $arg);
 	}
 
 	function getNamedArgs() {
@@ -93,6 +92,13 @@ class Args {
 		return $pakParts;
 	}
 
+	function requireUnnamed($items) {
+		if(sizeof($this->unnamedArgs) < sizeof($items)) {
+			echo "Usage: {$_SERVER['argv'][0]} " . $this->action . " (";
+			echo implode(") (", $items);
+			echo ")\n";
+		}
+	}
 }
 
 /**
@@ -100,6 +106,8 @@ class Args {
  */
 class Action_save {
 	function go($args, $executor) {
+		$args->requireUnnamed(array('source webroot', 'dest sspak file'));
+
 		$unnamedArgs = $args->getUnnamedArgs();
 		$namedArgs = $args->getNamedArgs();
 
@@ -239,6 +247,8 @@ class Action_save {
  */
 class Action_load {
 	function go($args, $executor) {
+		$args->requireUnnamed(array('source sspak file', 'dest webroot'));
+
 		// Set-up
 		$file = $args->unnamed(0);
 		$sspak = new SSPakFile($file, $executor);
@@ -366,7 +376,6 @@ class FilesystemEntity {
 	function isLocal() {
 		return $this->server == null;
 	}
-
 	function getPath() {
 		return $this->path;
 	}
