@@ -59,14 +59,16 @@ class Action_save {
 		if(!empty($namedArgs['from-sudo'])) $webroot->setSudo($namedArgs['from-sudo']);
 		else if(!empty($namedArgs['sudo'])) $webroot->setSudo($namedArgs['sudo']);
 
+		// Look up which parts of the sspak are going to be saved
+		$pakParks = array();
+		foreach(array('assets','db') as $part) {
+			$pakParts[$part] = !empty($namedArgs[$part]);
+		}
+		// Default to db and assets
+		if(!array_filter($pakParts)) $pakParts = array('db' => true, 'assets' => true);
+
 		// Get the environment details
 		$details = $webroot->sniff();
-
-		// Check the database type
-		$dbFunction = 'getdb_'.$details['db_type'];
-		if(!method_exists($this,$dbFunction)) {
-			throw new Exception("Can't process database type '" . $details['db_type'] . "'");
-		}
 
 		if(file_exists($file)) throw new Exception( "File '$file' already exists.");
 
@@ -77,15 +79,30 @@ class Action_save {
 		$dbFile = "$buildFolder/database.sql.gz";
 		$assetsFile = "$buildFolder/assets.tar.gz";
 
+		// Files to include in the .sspak file
+		$fileList = array();
+
 		// Save DB
-		$this->$dbFunction($webroot, $details, $dbFile);
+		if($pakParts['db']) {
+			// Check the database type
+			$dbFunction = 'getdb_'.$details['db_type'];
+			if(!method_exists($this,$dbFunction)) {
+				throw new Exception("Can't process database type '" . $details['db_type'] . "'");
+			}
+			$this->$dbFunction($webroot, $details, $dbFile);
+			$fileList[] = basename($dbFile);
+		}
 
 		// Save Assets
-		$this->getassets($webroot, $details['assets_path'], $assetsFile);
+		if($pakParts['assets']) {
+			$this->getassets($webroot, $details['assets_path'], $assetsFile);
+			$fileList[] = basename($assetsFile);
+		}
+
 
 		// Create the sspak file
 		$webroot->exec(
-			array('tar', '-C', $buildFolder, '-c', '-f','-', basename($dbFile), basename($assetsFile)),
+			array_merge(array('tar', '-C', $buildFolder, '-c', '-f','-'), $fileList),
 			array('outputFile' => $file)
 		);
 		
@@ -138,14 +155,17 @@ class Action_load {
 		if(!empty($namedArgs['to-sudo'])) $webroot->setSudo($namedArgs['to-sudo']);
 		else if(!empty($namedArgs['sudo'])) $webroot->setSudo($namedArgs['sudo']);
 
+		// Look up which parts of the sspak are going to be saved
+		$pakParks = array();
+		foreach(array('assets','db') as $part) {
+			$pakParts[$part] = !empty($namedArgs[$part]);
+		}
+		// Default to db and assets
+		if(!array_filter($pakParts)) $pakParts = array('db' => true, 'assets' => true);
+
+
 		// Get the environment details
 		$details = $webroot->sniff();
-
-		// Check the database type
-		$dbFunction = 'putdb_'.$details['db_type'];
-		if(!method_exists($this,$dbFunction)) {
-			throw new Exception("Can't process database type '" . $details['db_type'] . "'");
-		}
 
 		if(!file_exists($file)) throw new Exception( "File '$file' don't exist.");
 
@@ -161,11 +181,21 @@ class Action_load {
 			$webroot->upload($file, $sspakFile);
 		}
 
-		// Extract DB direct from sspak file
-		$this->$dbFunction($webroot, $details, $sspakFile);
+		if($pakParts['db'] && $sspak->contains('database.sql.gz')) {
+			// Check the database type
+			$dbFunction = 'putdb_'.$details['db_type'];
+			if(!method_exists($this,$dbFunction)) {
+				throw new Exception("Can't process database type '" . $details['db_type'] . "'");
+			}
 
-		// Extract Assets direct from sspak file
-		$this->putassets($webroot, $details['assets_path'], $sspakFile);
+			// Extract DB direct from sspak file
+			$this->$dbFunction($webroot, $details, $sspakFile);
+		}
+
+		if($pakParts['assets'] && $sspak->contains('assets.tar.gz')) {
+			// Extract Assets direct from sspak file
+			$this->putassets($webroot, $details['assets_path'], $sspakFile);
+		}
 
 		// Remove sspak from the server
 		if($sspakFile != $file) $webroot->unlink($sspakFile);

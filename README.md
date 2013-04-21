@@ -43,11 +43,11 @@ Sudo as www-data to perform the actions
     $> sspak load --sudo=www1 prod-site.sspak ~/Sites/devsite
     $> sspak transfer --from-sudo=www-data --to-sudo=www1 me@prodserver:/var/www ~/Sites/devsite
 
-Transfer only the database: *(not implemented yet)*
+Transfer only the database:
 
     $> sspak transfer --db me@prodserver:/var/www ~/Sites/devsite
 
-Or only the assets: *(not implemented yet)*
+Or only the assets:
 
     $> sspak transfer --assets me@prodserver:/var/www ~/Sites/devsite
 
