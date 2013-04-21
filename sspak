@@ -449,7 +449,7 @@ class Executor {
 
 		if($options['throwException'] && $result['return'] != 0)	{
 			throw new Exception("Command: $command\nExecution failed: returned {$result['return']}.\n"
-				. "Output:\n{$result['output']}");
+				. (empty($result['output']) ? "" : "Output:\n{$result['output']}"));
 		}
 
 		return $result;
