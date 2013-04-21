@@ -33,7 +33,7 @@ Load an sspak file into a local instance:
 
     $> sspak load prod-site.sspak ~/Sites/devsite
 
-Transfer in one step:
+Transfer in one step: *(not implemented yet)*
 
     $> sspak transfer me@prodserver:/var/www ~/Sites/devsite
 
@@ -43,11 +43,11 @@ Sudo as www-data to perform the actions
     $> sspak load --sudo=www1 prod-site.sspak ~/Sites/devsite
     $> sspak transfer --from-sudo=www-data --to-sudo=www1 me@prodserver:/var/www ~/Sites/devsite
 
-Transfer only the database:
+Transfer only the database: *(not implemented yet)*
 
     $> sspak transfer --db me@prodserver:/var/www ~/Sites/devsite
 
-Or only the assets:
+Or only the assets: *(not implemented yet)*
 
     $> sspak transfer --assets me@prodserver:/var/www ~/Sites/devsite
 
