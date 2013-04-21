@@ -9,17 +9,12 @@ $namedArgs = array();
 $unnamedArgs = array();
 $nextArgName = null;
 foreach($args as $arg) {
-	if($nextArgName) {
-		$namedArgs[$nextArgName] = $arg;
-		$nextArgName = null;
+	if(preg_match('/^--([^=]+)=(.*)$/', $arg, $matches)) {
+		$namedArgs[$matches[1]] = $matches[2];
+	} else if(preg_match('/^--([^=]+)$/', $arg, $matches)) {
+		$namedArgs[$matches[1]] = true;
 	} else {
-		if(preg_match('/^--([^=]+)=(.*)$/', $arg, $matches)) {
-			$namedArgs[$matches[0]] = $matches[1];
-		} else if(preg_match('/^--([^=]+)$/', $arg, $matches)) {
-			$nextArgName = $matches[1];
-		} else {
-			$unnamedArgs[] = $arg;
-		}
+		$unnamedArgs[] = $arg;
 	}
 }
 
