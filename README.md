@@ -13,9 +13,9 @@ An sspak file is an ungzipped tar, containing the following files at the top lev
  * **assets.tar.gz:** A gzipped tar file containing all assets.  The root directory within the tar file must be called "assets".
  * **git-remote:** A text file of the following form:
 
-    remote = (url)
-    branch = (name)
-    sha = (sha-hash)
+        remote = (url)
+        branch = (name)
+        sha = (sha-hash)
 
 By convention, the file should have the extension `.sspak`.
 
