@@ -104,7 +104,7 @@ class Action_save {
 		$hostArg = (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') ? escapeshellarg("--host=".$conf['db_server']) : '';
 		$filenameArg = escapeshellarg($filename);
 
-		return $webroot->exec("mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick $usernameArg $passwordArg $hostArg $databaseArg | gzip -c > $filenameArg");
+		return $webroot->exec("mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick  --set-charset --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg | gzip -c > $filenameArg");
 	}
 
 	function getassets($webroot, $assetsPath, $filename) {
@@ -173,7 +173,7 @@ class Action_load {
 		$sspakFileArg = escapeshellarg($sspakFile);
 
 		$webroot->exec("echo 'create database if not exists `" . addslashes($conf['db_database']) . "`' | mysql $usernameArg $passwordArg $hostArg");
-		return $webroot->exec("tar Oxf $sspakFileArg --include database.sql.gz | gunzip -c | mysql $usernameArg $passwordArg $hostArg $databaseArg");
+		return $webroot->exec("tar Oxf $sspakFileArg --include database.sql.gz | gunzip -c | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg");
 	}
 
 	function putassets($webroot, $assetsPath, $sspakFile) {
