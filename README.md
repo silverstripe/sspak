@@ -7,12 +7,17 @@ environments.
 The file format
 ---------------
 
-It's really simple, just an ungzipped tar, containing the following files at the top level:
+An sspak file is an ungzipped tar, containing the following files at the top level:
 
- * database.sql.gz
- * asssets.sql.gz
+ * **database.sql.gz:** A gzipped SQL file that will re-create the entire database, including all content.  It will contain the 'drop' statements necessary to replace any existing content as needed.
+ * **assets.tar.gz:** A gzipped tar file containing all assets.  The root directory within the tar file must be called "assets".
+ * **git-remote:** A text file of the following form:
 
-Use the extension `.sspak`.
+    remote = (url)
+    branch = (name)
+    sha = (sha-hash)
+
+By convention, the file should have the extension `.sspak`.
 
 Use
 ---
@@ -43,13 +48,13 @@ Sudo as www-data to perform the actions
     $> sspak load --sudo=www1 prod-site.sspak ~/Sites/devsite
     $> sspak transfer --from-sudo=www-data --to-sudo=www1 me@prodserver:/var/www ~/Sites/devsite
 
-Transfer only the database:
+Save only the database: 
 
-    $> sspak transfer --db me@prodserver:/var/www ~/Sites/devsite
+    $> sspak save --db me@prodserver:/var/www dev.sspak
 
-Or only the assets:
+Load only the assets:
 
-    $> sspak transfer --assets me@prodserver:/var/www ~/Sites/devsite
+    $> sspak load --assets dev.sspak ~/Sites/devsite
 
 Caveats
 -------

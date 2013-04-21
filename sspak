@@ -61,11 +61,11 @@ class Action_save {
 
 		// Look up which parts of the sspak are going to be saved
 		$pakParks = array();
-		foreach(array('assets','db') as $part) {
+		foreach(array('assets','db','git-remote') as $part) {
 			$pakParts[$part] = !empty($namedArgs[$part]);
 		}
 		// Default to db and assets
-		if(!array_filter($pakParts)) $pakParts = array('db' => true, 'assets' => true);
+		if(!array_filter($pakParts)) $pakParts = array('db' => true, 'assets' => true, 'git-remote' => true);
 
 		// Get the environment details
 		$details = $webroot->sniff();
@@ -78,6 +78,7 @@ class Action_save {
 
 		$dbFile = "$buildFolder/database.sql.gz";
 		$assetsFile = "$buildFolder/assets.tar.gz";
+		$gitRemoteFile = "$buildFolder/git-remote";
 
 		// Files to include in the .sspak file
 		$fileList = array();
@@ -99,6 +100,12 @@ class Action_save {
 			$fileList[] = basename($assetsFile);
 		}
 
+		// Save git-remote
+		if($pakParts['git-remote']) {
+			if($this->getgitremote($webroot, $gitRemoteFile)) {
+				$fileList[] = basename($gitRemoteFile);
+			}
+		}
 
 		// Create the sspak file
 		$webroot->exec(
@@ -136,6 +143,42 @@ class Action_save {
 		$filenameArg = escapeshellarg($filename);
 
 		return $webroot->exec("cd $assetsParentArg && tar czf $filenameArg $assetsBaseArg");
+	}
+
+	function getgitremote($webroot, $gitRemoteFile) {
+		// Only do anything if we're copying from a git checkout
+		$gitRepo = $webroot->getPath() .'/.git';
+		if($webroot->exists($gitRepo)) {
+			// Identify current branch
+			$output = $webroot->exec(array('git', '--git-dir='.$gitRepo, 'branch'));
+			if(preg_match("/\* ([^ \n]*)/", $output['output'], $matches)) {
+				// If there is a current branch, use that branch's remove
+				$currentBranch = $matches[1];
+				$output = $webroot->exec(array('git', '--git-dir='.$gitRepo, 'config','--get',"branch.$currentBranch.remote"));
+				$remoteName = trim($output['output']);
+				if(!$remoteName) $remoteName = 'origin';
+
+			// Default to origin
+			} else {
+				$currentBranch = null;
+				$remoteName = 'origin';	
+			}
+
+			// Determine the URL of that remote
+			$output = $webroot->exec(array('git', '--git-dir='.$gitRepo, 'config','--get',"remote.$remoteName.url"));
+			$remoteURL = trim($output['output']);
+
+			// Determine the current SHA
+			$output = $webroot->exec(array('git', '--git-dir='.$gitRepo, 'log','-1','--format=%H'));
+			$sha = trim($output['output']);
+
+			$content = "remote = $remoteURL\nbranch = $currentBranch\nsha = $sha\n";
+
+			$webroot->writeFile($gitRemoteFile, $content);
+
+			return true;
+		}
+		return false;
 	}
 }
 
@@ -277,6 +320,10 @@ class FilesystemEntity {
 		return $this->server == null;
 	}
 
+	function getPath() {
+		return $this->path;
+	}
+
 	/**
 	 * Execute a command on the relevant server
 	 * @param  string $command Shell command, either a fully escaped string or an array
@@ -309,6 +356,33 @@ class FilesystemEntity {
 			$this->executor->execLocal(array("scp", "$this->server:$source", $dest));
 		} else {
 			$this->executor->execLocal(array("cp", $file, $dest));
+		}
+	}
+
+	/**
+	 * Returns true if the given file or directory exists
+	 * @param string $file The file/dir to look for
+	 * @return boolean
+	 */
+	function exists($file) {
+		if($this->server) {
+			$result = $this->execRemote($this->server, "if [ -e " . escapeshellarg($file) . " ]; then echo yes; fi");
+			return (trim($result['output']) == 'yes');
+
+		} else {
+			return file_exists($file);
+		}
+	}
+
+	/**
+	 * Create the given file with the given content
+	 */
+	function writeFile($file, $content) {
+		if($this->server) {
+			$this->execRemote($this->server, "echo " . escapeshellarg($content) . " > " . escapeshellarg($file));
+
+		} else {
+			file_put_contents($file, $content);
 		}
 	}
 
