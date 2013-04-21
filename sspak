@@ -54,6 +54,7 @@ class Action_save {
 
 		$webroot = new Webroot($unnamedArgs[0], $e);
 		$file = $unnamedArgs[1];
+		$sspak = new SSPakFile($file, $e);
 
 		if(!empty($namedArgs['from-sudo'])) $webroot->setSudo($namedArgs['from-sudo']);
 		else if(!empty($namedArgs['sudo'])) $webroot->setSudo($namedArgs['sudo']);
@@ -131,6 +132,7 @@ class Action_load {
 		$e = new Executor;
 
 		$file = $unnamedArgs[0];
+		$sspak = new SSPakFile($file, $e);
 		$webroot = new Webroot($unnamedArgs[1], $e);
 
 		if(!empty($namedArgs['to-sudo'])) $webroot->setSudo($namedArgs['to-sudo']);
@@ -225,14 +227,10 @@ class Action_transfer {
 	}
 }
 
-/**
- * Represents one webroot, local or remote, that sspak interacts with
- */
-class Webroot {
+class FilesystemEntity {
 	protected $server;
 	protected $path;
 	protected $executor;
-	protected $sudo = null;
 
 	function __construct($path, $executor) {
 		$this->executor = $executor;
@@ -245,34 +243,17 @@ class Webroot {
 		}
 	}
 
-	function setSudo($sudo) {
-		$this->sudo = $sudo;
-	}
-
 	function isLocal() {
 		return $this->server == null;
 	}
 
 	/**
-	 * Return a map of the db & asset config details, acquired with ssnap-sniffer
+	 * Execute a command on the relevant server
+	 * @param  string $command Shell command, either a fully escaped string or an array
 	 */
-	function sniff() {
-		$snifferFile = dirname(__FILE__) . '/sspak-sniffer.php';
-
-		if($this->server) {
-			$this->upload($snifferFile, '/tmp/sspak-sniffer.php');
-			// This makes it easier for repeat users to clean it up
-			$this->exec(array('chmod', '0777', '/tmp/sspak-sniffer.php'));
-			$result = $this->execSudo(array('/usr/bin/env', 'php', '/tmp/sspak-sniffer.php', $this->path));
-			$this->exec(array('unlink', '/tmp/sspak-sniffer.php'));
-
-		} else {
-			$result = $this->exec(array('/usr/bin/env', 'php', $snifferFile, $this->path));
-		}
-
-		$parsed = @unserialize($result['output']);
-		if(!$parsed) throw new Exception("Could not parse sspak-sniffer content:\n{$result['output']}\n");
-		return $parsed;
+	function exec($command, $options = array()) {
+		if($this->server) return $this->executor->execRemote($this->server, $command, $options);
+		else return $this->executor->execLocal($command, $options);
 	}
 
 	/**
@@ -311,14 +292,52 @@ class Webroot {
 		$this->exec(array('rm', '-rf', $file));
 		return true;
 	}
+}
+
+class SSPakFile extends FilesystemEntity {
 
 	/**
-	 * Execute a command on the relevant server
-	 * @param  string $command Shell command, either a fully escaped string or an array
+	 * Returns true if this sspak file contains the given file.
+	 * @param string $file The filename to look for
+	 * @return boolean
 	 */
-	function exec($command, $options = array()) {
-		if($this->server) return $this->executor->execRemote($this->server, $command, $options);
-		else return $this->executor->execLocal($command, $options);
+	function contains($file) {
+		$contents = $this->exec(array('tar', 'tf', $this->path));
+		$items = explode("\n", trim($contents['output']));
+		foreach($items as $item) if ($item == $file) return true;
+		return false;
+	}
+}
+
+/**
+ * Represents one webroot, local or remote, that sspak interacts with
+ */
+class Webroot extends FilesystemEntity {
+	protected $sudo = null;
+
+	function setSudo($sudo) {
+		$this->sudo = $sudo;
+	}
+
+	/**
+	 * Return a map of the db & asset config details, acquired with ssnap-sniffer
+	 */
+	function sniff() {
+		$snifferFile = dirname(__FILE__) . '/sspak-sniffer.php';
+
+		if($this->server) {
+			$remoteSniffer = '/tmp/sspak-sniffer-' . rand(100000,999999) . '.php';
+			$this->upload($snifferFile, $remoteSniffer);
+			$result = $this->execSudo(array('/usr/bin/env', 'php', $remoteSniffer, $this->path));
+			$this->unlink($remoteSniffer);
+
+		} else {
+			$result = $this->exec(array('/usr/bin/env', 'php', $snifferFile, $this->path));
+		}
+
+		$parsed = @unserialize($result['output']);
+		if(!$parsed) throw new Exception("Could not parse sspak-sniffer content:\n{$result['output']}\n");
+		return $parsed;
 	}
 
 	/**
