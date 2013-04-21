@@ -1,7 +1,22 @@
 #!/usr/bin/env php
 <?php
 
+// This will be rewritten to "true" as part of the self-extractor generation
+$isSelfExtracting = false;
+
+// This will be rewritten to contain the content as part of the self-extractor generation
+$snifferFileContent = '';
+
 $argObj = new Args($_SERVER['argv']);
+
+// Special case for self-extracting sspaks
+if($isSelfExtracting) {
+	$argObj->unshiftUnnamed('@self');
+	if(!in_array($argObj->getAction(), array("install", "load"))) {
+		echo "Self-extracting sspaks can only use 'install' and 'load' actions.\n";
+		exit(3);
+	}
+}
 
 // Action dispatch - one class per action
 $actionClass = 'Action_'.strtolower($argObj->getAction());
@@ -347,6 +362,40 @@ class Action_install {
 }
 
 /**
+ * Bundle a .sspak into a self-extracting executable installer.
+ */
+class Action_bundle {
+	function go($args, $executor) {
+		$args->requireUnnamed(array('source sspak file', 'dest executable file'));
+
+		// Set-up
+		$sourceFile = $args->unnamed(0);
+		$destFile = $args->unnamed(1);
+
+		$sspakScript = file_get_contents($_SERVER['argv'][0]);
+		// Broken up to not get detected by our sed command
+		$sspakScript .= "\n__halt_compiler();\n"."//"." TAR START?>\n";
+
+		// Mark as self-extracting
+		$sspakScript = str_replace('$isSelfExtracting = false;', '$isSelfExtracting = true;', $sspakScript);
+
+		// Load the sniffer file
+		$snifferFile = dirname(__FILE__) . '/sspak-sniffer.php';
+		$sspakScript = str_replace("\$snifferFileContent = '';\n",
+			"\$snifferFileContent = '" 
+			. str_replace(array("\\","'"),array("\\\\", "\\'"), file_get_contents($snifferFile)) . "';\n", $sspakScript);
+
+		file_put_contents($destFile, $sspakScript);
+		chmod($destFile, 0775);
+
+		$executor->execLocal(array('cat', $sourceFile), array(
+			'outputFile' => $destFile,
+			'outputFileAppend' => true
+		));
+	}
+}
+
+/**
  * Transfer between environments without creating an sspak file
  */
 class Action_transfer {
@@ -403,6 +452,15 @@ class FilesystemEntity {
 		} else {
 			$this->executor->execLocal(array("cp", $source, $dest));
 		}
+	}
+
+	/**
+	 * Create a file with the given content at the given destination on the server
+	 * @param string $content The content of the file
+	 * @param string $dest The remote filename/dir to upload to
+	 */
+	function uploadContent($content, $dest) {
+		$this->exec("echo " . escapeshellarg($content) . " > " . escapeshellarg($dest));
 	}
 
 	/**
@@ -561,14 +619,22 @@ class Webroot extends FilesystemEntity {
 	function sniff() {
 		$snifferFile = dirname(__FILE__) . '/sspak-sniffer.php';
 
-		if($this->server) {
+		if($this->server || !file_exists($snifferFile)) {
 			$remoteSniffer = '/tmp/sspak-sniffer-' . rand(100000,999999) . '.php';
-			$this->upload($snifferFile, $remoteSniffer);
+
+			if(file_exists($snifferFile)) {
+				$this->upload($snifferFile, $remoteSniffer);
+			} else {
+				global $snifferFileContent;
+				$this->uploadContent($snifferFileContent, $remoteSniffer);
+			}
+
 			$result = $this->execSudo(array('/usr/bin/env', 'php', $remoteSniffer, $this->path));
 			$this->unlink($remoteSniffer);
 
 		} else {
 			$result = $this->exec(array('/usr/bin/env', 'php', $snifferFile, $this->path));
+
 		}
 
 		$parsed = @unserialize($result['output']);
@@ -686,6 +752,7 @@ class Executor {
 		'inputContent' => null,
 		'inputFile' => null,
 		'outputFile' => null,
+		'outputFileAppend' => false,
 	);
 
 	/**
@@ -709,7 +776,9 @@ class Executor {
 
 		// Alternatives
 		if($options['inputContent']) $pipeSpec[0] = array('pipe', 'r');
-		if($options['outputFile']) $pipeSpec[1] = array('file', $options['outputFile'], 'w');
+		if($options['outputFile']) $pipeSpec[1] = array('file',
+				$options['outputFile'], 
+				$options['outputFileAppend'] ? 'a' : 'w');
 
 		$process = proc_open($command, $pipeSpec, $pipes);
 

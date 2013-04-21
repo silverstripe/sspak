@@ -60,6 +60,12 @@ Install a new site from an sspak (needs to contain a git-remote):
 
     $> sspak install newsite.sspak ~/Sites/newsite
 
+Bundle an sspak file into a self-extracting exectuable:
+
+    $> sspak bundle site.sspak site-installer
+    $> ./site-installer install ~/Sites/newsite
+    $> ./site-installer load ~/Sites/existingsite
+
 Caveats
 -------
 
