@@ -1,42 +1,20 @@
 #!/usr/bin/env php
 <?php
 
-// Process arguments into namedArgs and unnamedArgs
-$args = $_SERVER['argv'];
-array_shift($args);
-
-$namedArgs = array();
-$unnamedArgs = array();
-$nextArgName = null;
-foreach($args as $arg) {
-	if(preg_match('/^--([^=]+)=(.*)$/', $arg, $matches)) {
-		$namedArgs[$matches[1]] = $matches[2];
-	} else if(preg_match('/^--([^=]+)$/', $arg, $matches)) {
-		$namedArgs[$matches[1]] = true;
-	} else {
-		$unnamedArgs[] = $arg;
-	}
-}
-
-if(sizeof($unnamedArgs) != 3) {
-	echo "Usage: {$_SERVER['argv'][0]} (action) (from) (to)\n\nAction can be 'save', 'load', or 'transfer'.\n";
-	exit(1);
-}
-
-$action = array_shift($unnamedArgs);
+$argObj = new Args($_SERVER['argv']);
 
 // Action dispatch - one class per action
-$actionClass = 'Action_'.strtolower($action);
+$actionClass = 'Action_'.strtolower($argObj->getAction());
 if(class_exists($actionClass)) {
 	$obj = new $actionClass;
 	try {
-		$obj->go($unnamedArgs, $namedArgs);
+		$obj->go($argObj, new Executor);
 	} catch(Exception $e) {
 		echo $e->getMessage() . "\n";
 		exit(4);
 	}
 } else {
-	echo "Unrecognised action '$action'.\n";
+	echo "Unrecognised action '" . $argObj->getAction() . "'.\n";
 	exit(3);
 }
 
@@ -45,16 +23,89 @@ exit(0);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Handles argument processing
+ */
+class Args {
+	protected $namedArgs = array();
+	protected $unnamedArgs = array();
+	protected $action = null;
+
+	function __construct($args) {
+		array_shift($args);
+
+		foreach($args as $arg) {
+			if(preg_match('/^--([^=]+)=(.*)$/', $arg, $matches)) {
+				$this->namedArgs[$matches[1]] = $matches[2];
+			} else if(preg_match('/^--([^=]+)$/', $arg, $matches)) {
+				$this->namedArgs[$matches[1]] = true;
+			} else {
+				$this->unnamedArgs[] = $arg;
+			}
+		}
+
+		if(sizeof($this->unnamedArgs) != 3) {
+			echo "Usage: {$_SERVER['argv'][0]} (action) (from) (to)\n\nAction can be 'save', 'load', or 'transfer'.\n";
+			exit(1);
+		}
+
+		$this->action = array_shift($this->unnamedArgs);
+	}
+
+	function getNamedArgs() {
+		return $this->namedArgs;
+	}
+
+	function getUnnamedArgs() {
+		return $this->unnamedArgs;
+	}
+
+	function getAction() {
+		return $this->action;
+	}
+
+	/**
+	 * Return the unnamed arg of the given index (0 = first)
+	 */
+	function unnamed($idx) {
+		return $this->unnamedArgs[$idx];
+	}
+
+	/**
+	 * Return the sudo argument, preferring a more specific one with the given optional prefix
+	 */
+	function sudo($optionalPrefix) {
+		if(!empty($this->namedArgs[$optionalPrefix . '-sudo'])) return $this->namedArgs[$optionalPrefix . '-sudo'];
+		else if(!empty($this->namedArgs['sudo'])) return $this->namedArgs['sudo'];
+		else return null;
+	}
+
+	/**
+	 * Return the pak-parks arguments, as a map of part => boolean
+	 */
+	function pakParts() {
+		// Look up which parts of the sspak are going to be saved
+		$pakParks = array();
+		foreach(array('assets','db') as $part) {
+			$pakParts[$part] = !empty($this->namedArgs[$part]);
+		}
+		// Default to db and assets
+		if(!array_filter($pakParts)) $pakParts = array('db' => true, 'assets' => true);
+		return $pakParts;
+	}
+
+}
+
+/**
  * Save an .sspak file
  */
 class Action_save {
-	function go($unnamedArgs, $namedArgs) {
-		// Some set-up
-		$e = new Executor;
+	function go($args, $executor) {
+		$unnamedArgs = $args->getUnnamedArgs();
+		$namedArgs = $args->getNamedArgs();
 
-		$webroot = new Webroot($unnamedArgs[0], $e);
+		$webroot = new Webroot($unnamedArgs[0], $executor);
 		$file = $unnamedArgs[1];
-		$sspak = new SSPakFile($file, $e);
+		$sspak = new SSPakFile($file, $executor);
 
 		if(!empty($namedArgs['from-sudo'])) $webroot->setSudo($namedArgs['from-sudo']);
 		else if(!empty($namedArgs['sudo'])) $webroot->setSudo($namedArgs['sudo']);
@@ -187,31 +238,18 @@ class Action_save {
  * Does not backup - be careful!
  */
 class Action_load {
-	function go($unnamedArgs, $namedArgs) {
-		// Some set-up
-		$e = new Executor;
+	function go($args, $executor) {
+		// Set-up
+		$file = $args->unnamed(0);
+		$sspak = new SSPakFile($file, $executor);
+		$webroot = new Webroot($args->unnamed(1), $executor);
+		$webroot->setSudo($args->sudo('to'));
+		$pakParts = $args->pakParts();
 
-		$file = $unnamedArgs[0];
-		$sspak = new SSPakFile($file, $e);
-		$webroot = new Webroot($unnamedArgs[1], $e);
+		// Validation
+		if(!file_exists($file)) throw new Exception( "File '$file' doesn't exist.");
 
-		if(!empty($namedArgs['to-sudo'])) $webroot->setSudo($namedArgs['to-sudo']);
-		else if(!empty($namedArgs['sudo'])) $webroot->setSudo($namedArgs['sudo']);
-
-		// Look up which parts of the sspak are going to be saved
-		$pakParks = array();
-		foreach(array('assets','db') as $part) {
-			$pakParts[$part] = !empty($namedArgs[$part]);
-		}
-		// Default to db and assets
-		if(!array_filter($pakParts)) $pakParts = array('db' => true, 'assets' => true);
-
-
-		// Get the environment details
-		$details = $webroot->sniff();
-
-		if(!file_exists($file)) throw new Exception( "File '$file' don't exist.");
-
+		// Ensure the pakfile is on the destination server
 		// If local, we can just use the sspak file directly
 		if($webroot->isLocal()) {
 			$sspakFile = $file;
@@ -224,70 +262,19 @@ class Action_load {
 			$webroot->upload($file, $sspakFile);
 		}
 
+		// Push database, if necessary
 		if($pakParts['db'] && $sspak->contains('database.sql.gz')) {
-			// Check the database type
-			$dbFunction = 'putdb_'.$details['db_type'];
-			if(!method_exists($this,$dbFunction)) {
-				throw new Exception("Can't process database type '" . $details['db_type'] . "'");
-			}
-
-			// Extract DB direct from sspak file
-			$this->$dbFunction($webroot, $details, $sspakFile);
+			$webroot->putdb($sspakFile);
 		}
 
+		// Push assets, if neccessary
 		if($pakParts['assets'] && $sspak->contains('assets.tar.gz')) {
-			// Extract Assets direct from sspak file
-			$this->putassets($webroot, $details['assets_path'], $sspakFile);
+			$webroot->putassets($sspakFile);
 		}
 
 		// Remove sspak from the server
 		if($sspakFile != $file) $webroot->unlink($sspakFile);
 	}
-
-
-	function putdb_MySQLDatabase($webroot, $conf, $sspakFile) {
-		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
-		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
-		$databaseArg = escapeshellarg($conf['db_database']);
-		$hostArg = (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') ? escapeshellarg("--host=".$conf['db_server']) : '';
-		$sspakFileArg = escapeshellarg($sspakFile);
-
-		$webroot->exec("echo 'create database if not exists `" . addslashes($conf['db_database']) . "`' | mysql $usernameArg $passwordArg $hostArg");
-		return $webroot->exec("tar Oxf $sspakFileArg --include database.sql.gz | gunzip -c | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg");
-	}
-
-	function putdb_PostgreSQLDatabase($webroot, $conf, $sspakFile) {
-		$usernameArg = escapeshellarg("--username=".$conf['db_username']);
-		$passwordArg = "PGPASSWORD=".escapeshellarg($conf['db_password']);
-		$databaseArg = escapeshellarg($conf['db_database']);
-		$hostArg = escapeshellarg("--host=".$conf['db_server']);
-		$sspakFileArg = escapeshellarg($sspakFile);
-
-		// Create database if needed
-		$result = $webroot->exec("echo \"select count(*) from pg_catalog.pg_database where datname = $databaseArg\" | $passwordArg psql $usernameArg $hostArg $databaseArg -qt");
-		if(trim($result['output']) == '0') {
-			$webroot->exec("$passwordArg createdb $usernameArg $hostArg $databaseArg");
-		}
-		
-		return $webroot->exec("tar Oxf $sspakFileArg --include database.sql.gz | gunzip -c | $passwordArg psql $usernameArg $hostArg $databaseArg");
-	}
-
-	function putassets($webroot, $assetsPath, $sspakFile) {
-		$assetsParentArg = escapeshellarg(dirname($assetsPath));
-		$assetsBaseArg = escapeshellarg(basename($assetsPath));
-		$assetsBaseOldArg = escapeshellarg(basename($assetsPath).'.old');
-		$sspakFileArg = escapeshellarg($sspakFile);
-
-		// Move existing assets to assets.old
-		$webroot->exec("if [ -d $assetsBaseArg ]; then mv $assetsBaseArg $assetsBaseOldArg; fi");
-
-		// Extract assets
-		$webroot->exec("tar Oxf $sspakFileArg --include assets.tar.gz | tar xzf - -C $assetsParentArg");
-
-		// Remove assets.old
-		$webroot->exec("if [ -d $assetsBaseOldArg ]; then rm -rf $assetsBaseOldArg; fi");
-	}
-
 }
 
 
@@ -295,10 +282,12 @@ class Action_load {
  * Transfer between environments without creating an sspak file
  */
 class Action_transfer {
-	function go($unnamedArgs, $namedArgs) {
+	function go($args) {
 		echo "Not implemented yet.\n";
 	}
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class FilesystemEntity {
 	protected $server;
@@ -418,9 +407,19 @@ class SSPakFile extends FilesystemEntity {
  */
 class Webroot extends FilesystemEntity {
 	protected $sudo = null;
+	protected $details = null;
 
 	function setSudo($sudo) {
 		$this->sudo = $sudo;
+	}
+
+	/**
+	 * Return a map of the db & asset config details.
+	 * Calls sniff once and then caches
+	 */
+	function details() {
+		if(!$this->details) $this->details = $this->sniff();
+		return $this->details;
 	}
 
 	/**
@@ -467,6 +466,70 @@ class Webroot extends FilesystemEntity {
 		} else {
 			return $this->exec($command);
 		}
+	}
+
+	/**
+	 * Put the database from the given sspak file into this webroot.
+	 * @param array $details The previously sniffed details of this webroot
+	 * @param string $sspakFile Filename
+	 */
+	function putdb($sspakFile) {
+		$details = $this->details();
+
+		// Check the database type
+		$dbFunction = 'putdb_'.$details['db_type'];
+		if(!method_exists($this,$dbFunction)) {
+			throw new Exception("Can't process database type '" . $details['db_type'] . "'");
+		}
+
+		// Extract DB direct from sspak file
+		return $this->$dbFunction($details, $sspakFile);
+	}
+
+	function putdb_MySQLDatabase($conf, $sspakFile) {
+		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
+		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
+		$databaseArg = escapeshellarg($conf['db_database']);
+		$hostArg = (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') ? escapeshellarg("--host=".$conf['db_server']) : '';
+		$sspakFileArg = escapeshellarg($sspakFile);
+
+		$this->exec("echo 'create database if not exists `" . addslashes($conf['db_database']) . "`' | mysql $usernameArg $passwordArg $hostArg");
+		return $this->exec("tar Oxf $sspakFileArg --include database.sql.gz | gunzip -c | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg");
+	}
+
+	function putdb_PostgreSQLDatabase($conf, $sspakFile) {
+		$usernameArg = escapeshellarg("--username=".$conf['db_username']);
+		$passwordArg = "PGPASSWORD=".escapeshellarg($conf['db_password']);
+		$databaseArg = escapeshellarg($conf['db_database']);
+		$hostArg = escapeshellarg("--host=".$conf['db_server']);
+		$sspakFileArg = escapeshellarg($sspakFile);
+
+		// Create database if needed
+		$result = $this->exec("echo \"select count(*) from pg_catalog.pg_database where datname = $databaseArg\" | $passwordArg psql $usernameArg $hostArg $databaseArg -qt");
+		if(trim($result['output']) == '0') {
+			$this->exec("$passwordArg createdb $usernameArg $hostArg $databaseArg");
+		}
+		
+		return $this->exec("tar Oxf $sspakFileArg --include database.sql.gz | gunzip -c | $passwordArg psql $usernameArg $hostArg $databaseArg");
+	}
+
+	function putassets($sspakFile) {
+		$details = $this->details();
+		$assetsPath = $details['assets_path'];
+
+		$assetsParentArg = escapeshellarg(dirname($assetsPath));
+		$assetsBaseArg = escapeshellarg(basename($assetsPath));
+		$assetsBaseOldArg = escapeshellarg(basename($assetsPath).'.old');
+		$sspakFileArg = escapeshellarg($sspakFile);
+
+		// Move existing assets to assets.old
+		$this->exec("if [ -d $assetsBaseArg ]; then mv $assetsBaseArg $assetsBaseOldArg; fi");
+
+		// Extract assets
+		$this->exec("tar Oxf $sspakFileArg --include assets.tar.gz | tar xzf - -C $assetsParentArg");
+
+		// Remove assets.old
+		$this->exec("if [ -d $assetsBaseOldArg ]; then rm -rf $assetsBaseOldArg; fi");
 	}
 }
 
