@@ -236,11 +236,12 @@ class Webroot {
 	 * Return a map of the db & asset config details, acquired with ssnap-sniffer
 	 */
 	function sniff() {
-		$snifferFile = 'sspak-sniffer.php';
+		$snifferFile = dirname(__FILE__) . '/sspak-sniffer.php';
 
 		if($this->server) {
 			$this->upload($snifferFile, '/tmp/sspak-sniffer.php');
-			$this->exec(array('chmod', 'a+r', '/tmp/sspak-sniffer.php'));
+			// This makes it easier for repeat users to clean it up
+			$this->exec(array('chmod', '0777', '/tmp/sspak-sniffer.php'));
 			$result = $this->execSudo(array('/usr/bin/env', 'php', '/tmp/sspak-sniffer.php', $this->path));
 			$this->exec(array('unlink', '/tmp/sspak-sniffer.php'));
 

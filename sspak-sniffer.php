@@ -13,6 +13,7 @@ if(empty($_SERVER['argv'][1])) {
 }
 
 $basePath = $_SERVER['argv'][1];
+if($basePath[0] != '/') $basePath = getcwd() . '/' . $basePath;
 
 // SilverStripe bootstrap
 define('BASE_PATH', $basePath);
