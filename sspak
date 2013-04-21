@@ -247,7 +247,7 @@ class Action_load {
 		$pakParts = $args->pakParts();
 
 		// Validation
-		if(!file_exists($file)) throw new Exception( "File '$file' doesn't exist.");
+		if(!$sspak->exists()) throw new Exception( "File '$file' doesn't exist.");
 
 		// Ensure the pakfile is on the destination server
 		// If local, we can just use the sspak file directly
@@ -260,16 +260,17 @@ class Action_load {
 
 			// Upload the sspak file
 			$webroot->upload($file, $sspakFile);
+			$sspak = new SSPakFile($webroot->getServer().":$sspakFile", $executor);
 		}
 
 		// Push database, if necessary
 		if($pakParts['db'] && $sspak->contains('database.sql.gz')) {
-			$webroot->putdb($sspakFile);
+			$webroot->putdb($sspak);
 		}
 
 		// Push assets, if neccessary
 		if($pakParts['assets'] && $sspak->contains('assets.tar.gz')) {
-			$webroot->putassets($sspakFile);
+			$webroot->putassets($sspak);
 		}
 
 		// Remove sspak from the server
@@ -283,6 +284,8 @@ class Action_load {
  */
 class Action_install {
 	function go($args, $executor) {
+		$args->requireUnnamed(array('source sspak file', 'dest new webroot'));
+
 		// Set-up
 		$file = $args->unnamed(0);
 		$webrootDir = $args->unnamed(1);
@@ -293,7 +296,7 @@ class Action_install {
 
 		// Validation
 		if($webroot->exists($webroot->getPath())) throw new Exception( "Webroot '$webrootDir' already exists.");
-		if(!file_exists($file)) throw new Exception( "File '$file' doesn't exist.");
+		if(!$sspak->exists()) throw new Exception( "File '$file' doesn't exist.");
 
 		// Create new dir
 		$webroot->exec(array('mkdir', $webroot->getPath()));
@@ -314,16 +317,18 @@ class Action_install {
 
 			// Upload the sspak file
 			$webroot->upload($file, $sspakFile);
+			$sspak = new SSPakFile($webroot->getServer().":$sspakFile", $executor);
+
 		}
 
 		// Push database, if necessary
 		if($pakParts['db'] && $sspak->contains('database.sql.gz')) {
-			$webroot->putdb($sspakFile);
+			$webroot->putdb($sspak);
 		}
 
 		// Push assets, if neccessary
 		if($pakParts['assets'] && $sspak->contains('assets.tar.gz')) {
-			$webroot->putassets($sspakFile);
+			$webroot->putassets($sspak);
 		}
 
 		// Remove sspak from the server
@@ -364,6 +369,9 @@ class FilesystemEntity {
 
 	function getPath() {
 		return $this->path;
+	}
+	function getServer() {
+		return $this->server;
 	}
 
 	/**
@@ -406,7 +414,10 @@ class FilesystemEntity {
 	 * @param string $file The file/dir to look for
 	 * @return boolean
 	 */
-	function exists($file) {
+	function exists($file = null) {
+		if(!$file) $file = $this->path;
+		if($file == '@self') return true;
+
 		if($this->server) {
 			$result = $this->execRemote($this->server, "if [ -e " . escapeshellarg($file) . " ]; then echo yes; fi");
 			return (trim($result['output']) == 'yes');
@@ -443,12 +454,33 @@ class FilesystemEntity {
 class SSPakFile extends FilesystemEntity {
 
 	/**
+	 * Given a command array, switch to a self-extracting variation if needed
+	 */
+	function selfStreamCommand($command) {
+		if($this->path == '@self') {
+			$chosenPath = "-";
+			$self = escapeshellarg($_SERVER['argv'][0]);
+			$prefix = "sed -n -e '/\/\/ TAR START/,\$p' $self | tail -n +2 | ";
+		} else {
+			$chosenPath = $this->path;
+			$prefix = null;
+		}
+
+		foreach($command as $i => $item) {
+			if($item == '@path') $command[$i] = $chosenPath;
+		}
+
+		return $prefix . $this->executor->commandArrayToString($command);
+	}
+
+	/**
 	 * Returns true if this sspak file contains the given file.
 	 * @param string $file The filename to look for
 	 * @return boolean
 	 */
 	function contains($file) {
-		$contents = $this->exec(array('tar', 'tf', $this->path));
+		$contents = $this->exec($this->selfStreamCommand(array('tar', 'tf', '@path')));
+
 		$items = explode("\n", trim($contents['output']));
 		foreach($items as $item) if ($item == $file) return true;
 		return false;
@@ -458,7 +490,19 @@ class SSPakFile extends FilesystemEntity {
 	 * Returns the content of a file from this sspak
 	 */
 	function content($file) {
-		$result = $this->exec(array("tar", "Oxf", $this->path, "--include", $file));
+		$command = $this->selfStreamCommand(array("tar", "Oxf", '@path', "--include", $file));
+		$result = $this->exec($command);
+		
+		return $result['output'];
+	}
+
+	/**
+	 * Pipes the content of a file through another command
+	 */
+	function pipeContent($file, $pipeCommand) {
+		$command = $this->selfStreamCommand(array("tar", "Oxf", '@path', "--include", $file));
+		$result = $this->exec("$command | $pipeCommand");
+		
 		return $result['output'];
 	}
 
@@ -553,7 +597,7 @@ class Webroot extends FilesystemEntity {
 	 * @param array $details The previously sniffed details of this webroot
 	 * @param string $sspakFile Filename
 	 */
-	function putdb($sspakFile) {
+	function putdb($sspak) {
 		$details = $this->details();
 
 		// Check the database type
@@ -563,10 +607,10 @@ class Webroot extends FilesystemEntity {
 		}
 
 		// Extract DB direct from sspak file
-		return $this->$dbFunction($details, $sspakFile);
+		return $this->$dbFunction($details, $sspak);
 	}
 
-	function putdb_MySQLDatabase($conf, $sspakFile) {
+	function putdb_MySQLDatabase($conf, $sspak) {
 		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
 		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
 		$databaseArg = escapeshellarg($conf['db_database']);
@@ -574,39 +618,38 @@ class Webroot extends FilesystemEntity {
 		$sspakFileArg = escapeshellarg($sspakFile);
 
 		$this->exec("echo 'create database if not exists `" . addslashes($conf['db_database']) . "`' | mysql $usernameArg $passwordArg $hostArg");
-		return $this->exec("tar Oxf $sspakFileArg --include database.sql.gz | gunzip -c | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg");
+
+		return $sspak->pipeContent("database.sql.gz", "gunzip -c | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg");
 	}
 
-	function putdb_PostgreSQLDatabase($conf, $sspakFile) {
+	function putdb_PostgreSQLDatabase($conf, $sspak) {
 		$usernameArg = escapeshellarg("--username=".$conf['db_username']);
 		$passwordArg = "PGPASSWORD=".escapeshellarg($conf['db_password']);
 		$databaseArg = escapeshellarg($conf['db_database']);
 		$hostArg = escapeshellarg("--host=".$conf['db_server']);
-		$sspakFileArg = escapeshellarg($sspakFile);
 
 		// Create database if needed
 		$result = $this->exec("echo \"select count(*) from pg_catalog.pg_database where datname = $databaseArg\" | $passwordArg psql $usernameArg $hostArg $databaseArg -qt");
 		if(trim($result['output']) == '0') {
 			$this->exec("$passwordArg createdb $usernameArg $hostArg $databaseArg");
 		}
-		
-		return $this->exec("tar Oxf $sspakFileArg --include database.sql.gz | gunzip -c | $passwordArg psql $usernameArg $hostArg $databaseArg");
+
+		return $sspak->pipeContent("database.sql.gz", "gunzip -c | $passwordArg psql $usernameArg $hostArg $databaseArg");
 	}
 
-	function putassets($sspakFile) {
+	function putassets($sspak) {
 		$details = $this->details();
 		$assetsPath = $details['assets_path'];
 
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
 		$assetsBaseArg = escapeshellarg(basename($assetsPath));
 		$assetsBaseOldArg = escapeshellarg(basename($assetsPath).'.old');
-		$sspakFileArg = escapeshellarg($sspakFile);
 
 		// Move existing assets to assets.old
 		$this->exec("if [ -d $assetsBaseArg ]; then mv $assetsBaseArg $assetsBaseOldArg; fi");
 
 		// Extract assets
-		$this->exec("tar Oxf $sspakFileArg --include assets.tar.gz | tar xzf - -C $assetsParentArg");
+		$sspak->pipeContent("assets.tar.gz", "tar xzf - -C $assetsParentArg");
 
 		// Remove assets.old
 		$this->exec("if [ -d $assetsBaseOldArg ]; then rm -rf $assetsBaseOldArg; fi");
