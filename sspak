@@ -107,6 +107,16 @@ class Action_save {
 		return $webroot->exec("mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick  --set-charset --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg | gzip -c > $filenameArg");
 	}
 
+	function getdb_PostgreSQLDatabase($webroot, $conf, $filename) {
+		$usernameArg = escapeshellarg("--username=".$conf['db_username']);
+		$passwordArg = "PGPASSWORD=".escapeshellarg($conf['db_password']);
+		$databaseArg = escapeshellarg($conf['db_database']);
+		$hostArg = escapeshellarg("--host=".$conf['db_server']);
+		$filenameArg = escapeshellarg($filename);
+
+		return $webroot->exec("$passwordArg pg_dump --clean $usernameArg $hostArg $databaseArg | gzip -c > $filenameArg");
+	}
+
 	function getassets($webroot, $assetsPath, $filename) {
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
 		$assetsBaseArg = escapeshellarg(basename($assetsPath));
@@ -174,6 +184,22 @@ class Action_load {
 
 		$webroot->exec("echo 'create database if not exists `" . addslashes($conf['db_database']) . "`' | mysql $usernameArg $passwordArg $hostArg");
 		return $webroot->exec("tar Oxf $sspakFileArg --include database.sql.gz | gunzip -c | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg");
+	}
+
+	function putdb_PostgreSQLDatabase($webroot, $conf, $sspakFile) {
+		$usernameArg = escapeshellarg("--username=".$conf['db_username']);
+		$passwordArg = "PGPASSWORD=".escapeshellarg($conf['db_password']);
+		$databaseArg = escapeshellarg($conf['db_database']);
+		$hostArg = escapeshellarg("--host=".$conf['db_server']);
+		$sspakFileArg = escapeshellarg($sspakFile);
+
+		// Create database if needed
+		$result = $webroot->exec("echo \"select count(*) from pg_catalog.pg_database where datname = $databaseArg\" | $passwordArg psql $usernameArg $hostArg $databaseArg -qt");
+		if(trim($result['output']) == '0') {
+			$webroot->exec("$passwordArg createdb $usernameArg $hostArg $databaseArg");
+		}
+		
+		return $webroot->exec("tar Oxf $sspakFileArg --include database.sql.gz | gunzip -c | $passwordArg psql $usernameArg $hostArg $databaseArg");
 	}
 
 	function putassets($webroot, $assetsPath, $sspakFile) {
