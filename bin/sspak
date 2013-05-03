@@ -1,0 +1,47 @@
+#!/usr/bin/env php
+<?php
+
+require_once(dirname(__FILE__) . '/../src/Args.php');
+require_once(dirname(__FILE__) . '/../src/Executor.php');
+require_once(dirname(__FILE__) . '/../src/SSPak.php');
+require_once(dirname(__FILE__) . '/../src/FilesystemEntity.php');
+require_once(dirname(__FILE__) . '/../src/SSPakFile.php');
+require_once(dirname(__FILE__) . '/../src/Webroot.php');
+
+// This will be rewritten to "true" as part of the self-extractor generation
+$isSelfExtracting = false;
+
+// This will be rewritten to contain the content as part of the self-extractor generation
+$snifferFileContent = '';
+
+$argObj = new Args($_SERVER['argv']);
+
+// Special case for self-extracting sspaks
+if($isSelfExtracting) {
+	$argObj->unshiftUnnamed('@self');
+	if(!in_array($argObj->getAction(), array("install", "load"))) {
+		echo "Self-extracting sspaks can only use 'install' and 'load' actions.\n";
+		exit(3);
+	}
+}
+
+$ssPak = new SSPak(new Executor);
+
+$allowedActions = $ssPak->getActions();
+
+// Action dispatch - one class per action
+$action = strtolower($argObj->getAction());
+if(isset($allowedActions[$action])) {
+	$method = $allowedActions[$action]['method'];
+	try {
+		$ssPak->$method($argObj);
+	} catch(Exception $e) {
+		echo $e->getMessage() . "\n";
+		exit(4);
+	}
+} else {
+	echo "Unrecognised action '" . $action . "'.\n";
+	exit(3);
+}
+
+exit(0);
