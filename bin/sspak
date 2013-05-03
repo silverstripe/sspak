@@ -1,12 +1,15 @@
 #!/usr/bin/env php
 <?php
 
-require_once(dirname(__FILE__) . '/../src/Args.php');
-require_once(dirname(__FILE__) . '/../src/Executor.php');
-require_once(dirname(__FILE__) . '/../src/SSPak.php');
-require_once(dirname(__FILE__) . '/../src/FilesystemEntity.php');
-require_once(dirname(__FILE__) . '/../src/SSPakFile.php');
-require_once(dirname(__FILE__) . '/../src/Webroot.php');
+// Root from which to refer to src/
+if(!defined('SRC_ROOT')) define('SRC_ROOT', dirname(__FILE__) . '/../src/');
+
+require_once(SRC_ROOT . 'Args.php');
+require_once(SRC_ROOT . 'Executor.php');
+require_once(SRC_ROOT . 'SSPak.php');
+require_once(SRC_ROOT . 'FilesystemEntity.php');
+require_once(SRC_ROOT . 'SSPakFile.php');
+require_once(SRC_ROOT . 'Webroot.php');
 
 // This will be rewritten to "true" as part of the self-extractor generation
 $isSelfExtracting = false;
@@ -43,5 +46,3 @@ if(isset($allowedActions[$action])) {
 	echo "Unrecognised action '" . $action . "'.\n";
 	exit(3);
 }
-
-exit(0);

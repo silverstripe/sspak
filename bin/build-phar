@@ -1,0 +1,39 @@
+#!/usr/bin/env php
+<?php
+
+if(ini_get('phar.readonly')) {
+	echo "Please set phar.readonly to false in your php.ini.\n";
+	exit(1);
+}
+
+$root = dirname(dirname(__FILE__))."/";
+$srcRoot = $root . "src/";
+$buildRoot = $root . "build/";
+
+if(!file_exists($buildRoot)) mkdir($buildRoot);
+
+$phar = new Phar(
+	$buildRoot . "sspak.phar",
+    FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::KEY_AS_FILENAME,
+    "sspak.phar");
+
+// Add the bin file, but strip of the #! exec header.
+$phar['bin/sspak'] = preg_replace("/^#!\/usr\/bin\/env php\n/", '', file_get_contents($root . "bin/sspak"));
+
+foreach(scandir($srcRoot) as $file) {
+	if($file[0] == '.') continue;
+	$phar['src/'.$file] = file_get_contents($srcRoot . $file);
+}
+
+$stub = <<<STUB
+#!/usr/bin/env php
+<?php
+define('SRC_ROOT', 'phar://sspak.phar/src/');
+Phar::mapPhar('sspak.phar');
+require 'phar://sspak.phar/bin/sspak';
+__HALT_COMPILER();
+?>
+STUB;
+
+$phar->setStub($stub);
+chmod($buildRoot .  'sspak.phar', 0775);

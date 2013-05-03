@@ -24,25 +24,15 @@ class Webroot extends FilesystemEntity {
 	 * Return a map of the db & asset config details, acquired with ssnap-sniffer
 	 */
 	function sniff() {
-		$snifferFile = dirname(__FILE__) . '/sspak-sniffer.php';
+		global $snifferFileContent;
 
-		if($this->server || !file_exists($snifferFile)) {
-			$remoteSniffer = '/tmp/sspak-sniffer-' . rand(100000,999999) . '.php';
+		if(!$snifferFileContent) $snifferFileContent = file_get_contents(SRC_ROOT . 'sspak-sniffer.php');
 
-			if(file_exists($snifferFile)) {
-				$this->upload($snifferFile, $remoteSniffer);
-			} else {
-				global $snifferFileContent;
-				$this->uploadContent($snifferFileContent, $remoteSniffer);
-			}
+		$remoteSniffer = '/tmp/sspak-sniffer-' . rand(100000,999999) . '.php';
+		$this->uploadContent($snifferFileContent, $remoteSniffer);
 
-			$result = $this->execSudo(array('/usr/bin/env', 'php', $remoteSniffer, $this->path));
-			$this->unlink($remoteSniffer);
-
-		} else {
-			$result = $this->exec(array('/usr/bin/env', 'php', $snifferFile, $this->path));
-
-		}
+		$result = $this->execSudo(array('/usr/bin/env', 'php', $remoteSniffer, $this->path));
+		//$this->unlink($remoteSniffer);
 
 		$parsed = @unserialize($result['output']);
 		if(!$parsed) throw new Exception("Could not parse sspak-sniffer content:\n{$result['output']}\n");
@@ -97,7 +87,6 @@ class Webroot extends FilesystemEntity {
 		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
 		$databaseArg = escapeshellarg($conf['db_database']);
 		$hostArg = (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') ? escapeshellarg("--host=".$conf['db_server']) : '';
-		$sspakFileArg = escapeshellarg($sspakFile);
 
 		$this->exec("echo 'create database if not exists `" . addslashes($conf['db_database']) . "`' | mysql $usernameArg $passwordArg $hostArg");
 
