@@ -34,6 +34,8 @@ $allowedActions = $ssPak->getActions();
 
 // Action dispatch - one class per action
 $action = strtolower($argObj->getAction());
+if(!$action) $action = 'help';
+
 if(isset($allowedActions[$action])) {
 	$method = $allowedActions[$action]['method'];
 	try {
@@ -44,5 +46,6 @@ if(isset($allowedActions[$action])) {
 	}
 } else {
 	echo "Unrecognised action '" . $action . "'.\n";
+	$ssPak->help($argObj);
 	exit(3);
 }

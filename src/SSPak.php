@@ -16,27 +16,49 @@ class SSPak {
 
 	function getActions() {
 		return array(
+			"help" => array(
+				"description" => "Show this help message.",
+				"method" => "help",
+			),
 			"save" => array(
 				"description" => "Save a .sspak file from a site.",
+				"unnamedArgs" => array("webroot", "sspak file"),
 				"method" => "save",
 			),
 			"load" => array(
 				"description" => "Load an .sspak into an environment. Does not backup - be careful!",
+				"unnamedArgs" => array("sspak file", "webroot"),
 				"method" => "load",
 			),
 			"install" => array(
 				"description" => "Install an .sspak into a new environment.",
+				"unnamedArgs" => array("sspak file", "new webroot"),
 				"method" => "install",
 			),
 			"bundle" => array(
 				"description" => "Bundle a .sspak into a self-extracting executable installer.",
+				"unnamedArgs" => array("sspak file", "executable"),
 				"method" => "bundle",
 			),
+			/*
 			"transfer" => array(
 				"description" => "Transfer db & assets from one site to another (not implemented yet).",
+				"unnamedArgs" => array("src webroot", "dest webroot"),
 				"method" => "transfer",
 			),
+			*/
 		);
+	}
+
+	function help($args) {
+		echo "SSPak: manage SilverStripe .sspak archives.\n\nUsage:\n";
+		foreach($this->getActions() as $action => $info) {
+			echo "sspak $action";
+			if(!empty($info['unnamedArgs'])) {
+				foreach($info['unnamedArgs'] as $arg) echo " ($arg)";
+			}
+			echo "\n  {$info['description']}\n\n";
+		}
 	}
 
 	/**
