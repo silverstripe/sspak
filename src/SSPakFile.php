@@ -10,10 +10,18 @@ class SSPakFile extends FilesystemEntity {
 		if(!$this->isLocal()) throw new LogicException("Can't manipulate remote .sspak.phar filesize(filename), only remote webroots.");
 
 		$this->pharAlias = $pharAlias;
-		$this->phar = new Phar($path, FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::KEY_AS_FILENAME,
-			$this->pharAlias);
+		
+		// Executable Phar version
+		if(substr($path,-5) === '.phar') {
+			$this->phar = new Phar($path, FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::KEY_AS_FILENAME,
+				$this->pharAlias);
+			if(!file_exists($this->path)) $this->makeExecutable();
 
-		$this->makeExecutable();
+		// Non-executable Tar version
+		} else {
+			$this->phar = new PharData($path, FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::KEY_AS_FILENAME,
+				$this->pharAlias);
+		}
 	}
 
 	/**
