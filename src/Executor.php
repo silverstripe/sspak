@@ -10,8 +10,10 @@ class Executor {
 		'throwException' => true,
 		'inputContent' => null,
 		'inputFile' => null,
+		'inputStream' => null,
 		'outputFile' => null,
 		'outputFileAppend' => false,
+		'outputStream' => null,
 	);
 
 	/**
@@ -34,19 +36,41 @@ class Executor {
 		);
 
 		// Alternatives
-		if($options['inputContent']) $pipeSpec[0] = array('pipe', 'r');
-		if($options['outputFile']) $pipeSpec[1] = array('file',
+		if($options['inputContent'] || $options['inputStream']) $pipeSpec[0] = array('pipe', 'r');
+		
+		if($options['outputFile']) {
+			$pipeSpec[1] = array('file',
 				$options['outputFile'], 
 				$options['outputFileAppend'] ? 'a' : 'w');
+		}
 
 		$process = proc_open($command, $pipeSpec, $pipes);
 
-		if($options['inputContent']) fwrite($pipes[0], $options['inputContent']);
+		if($options['inputContent']) {
+			fwrite($pipes[0], $options['inputContent']);
+
+		} else if($options['inputStream']) {
+			while($content = fread($options['inputStream'], 8192)) {
+				fwrite($pipes[0], $content);
+			}
+		}
+		if(isset($pipes[0])) fclose($pipes[0]);
 	
 		$result = array();
 
 		if(isset($pipes[1])) {
-			$result['output'] = stream_get_contents($pipes[1]);
+			// If a stream was provided, then pipe all the content
+			// Doing it this way rather than passing outputStream to $pipeSpec
+			// Means that streams as well as simple FDs can be used
+			if($options['outputStream']) {
+				while($content = fread($pipes[1], 8192)) {
+					fwrite($options['outputStream'], $content);
+				}
+
+			// Otherwise save to a string
+			} else {
+				$result['output'] = stream_get_contents($pipes[1]);
+			}
 			fclose($pipes[1]);
 		}
 		if(isset($pipes[2])) {
