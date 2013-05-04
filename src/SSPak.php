@@ -134,10 +134,8 @@ class SSPak {
 		$hostArg = (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') ? escapeshellarg("--host=".$conf['db_server']) : '';
 		$filenameArg = escapeshellarg($filename);
 
-		$dumpCommand = "mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick  --set-charset --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg | gzip -c";
-		$stream = $sspak->writeStreamForFile($filename);
-		$webroot->exec($dumpCommand, array('outputStream' => $stream));
-		fclose($stream);
+		$process = $webroot->createProcess("mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick  --set-charset --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg | gzip -c");
+		$sspak->writeFileFromProcess($filename, $process);
 		return true;
 	}
 
@@ -148,19 +146,17 @@ class SSPak {
 		$hostArg = escapeshellarg("--host=".$conf['db_server']);
 		$filenameArg = escapeshellarg($filename);
 
-		$dumpCommand = "$passwordArg pg_dump --clean $usernameArg $hostArg $databaseArg | gzip -c";
-		$stream = $sspak->writeStreamForFile($filename);
-		$webroot->exec($dumpCommand, array('outputStream' => $stream));
-		fclose($stream);
+		$process = $webroot->createProcess("$passwordArg pg_dump --clean $usernameArg $hostArg $databaseArg | gzip -c");
+		$sspak->writeFileFromProcess($filename, $process);
+		return true;
 	}
 
 	function getassets($webroot, $assetsPath, $sspak, $filename) {
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
 		$assetsBaseArg = escapeshellarg(basename($assetsPath));
 
-		$stream = $sspak->writeStreamForFile($filename);
-		$webroot->exec("cd $assetsParentArg && tar czf - $assetsBaseArg", array('outputStream' => $stream));
-		fclose($stream);
+		$process = $webroot->createProcess("cd $assetsParentArg && tar czf - $assetsBaseArg");
+		$sspak->writeFileFromProcess($filename, $process);
 	}
 
 	function getgitremote($webroot, $sspak, $gitRemoteFile) {

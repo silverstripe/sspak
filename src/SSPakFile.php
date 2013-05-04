@@ -65,6 +65,30 @@ STUB;
 	}
 
 	/**
+	 * Pipe the output of the given process into a file within this SSPak
+	 * @param  string $filename The file to create within the SSPak
+	 * @param  Process $process  The process to execute and take the output from
+	 * @return null
+	 */
+	function writeFileFromProcess($filename, Process $process) {
+		// Non-executable Phars can't have content streamed into them
+		// This means that we need to create a temp file, which is a pain, if that file happens to be a 3GB
+		// asset dump. :-/
+		if($this->phar instanceof PharData) {
+			$tmpFile = '/tmp/sspak-content-' .rand(100000,999999);
+			$process->exec(array('outputFile' => $tmpFile));
+			$this->phar->addFile($tmpFile, $filename);
+			unlink($tmpFile);
+
+		// So, where we *can* use write streams, we do so.
+		} else {
+			$stream = $this->writeStreamForFile($filename);
+			$process->exec(array('outputStream' => $stream));
+			fclose($stream);
+		}
+	}
+
+	/**
 	 * Return a writeable stream corresponding to the given file within the .sspak
 	 * @param  string $filename The name of the file within the .sspak
 	 * @return Stream context
