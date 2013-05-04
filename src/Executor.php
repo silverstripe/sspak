@@ -24,9 +24,56 @@ class Executor {
 	 * @return A map containing 'return', 'output', and 'error'
 	 */
 	function execLocal($command, $options = array()) {
-		$options = array_merge($this->defaultOptions, $options);
+		$process = $this->createLocal($command, $options);
+		return $process->exec();
+	}
 
+	function execRemote($command, $options = array()) {
+		$process = $this->createRemote($command, $options);
+		return $process->exec();
+	}
+
+	function createLocal($command, $options) {
+		$options = array_merge($this->defaultOptions, $options);
 		if(is_array($command)) $command = $this->commandArrayToString($command);
+
+		return new Process($command, $options);
+	}
+
+	function createRemote($server, $command, $options = array()) {
+		if(is_array($command)) $command = $this->commandArrayToString($command);
+
+		if(!empty($options['outputFile'])) return $this->createRemote(array("ssh", $server, $command), $options);
+		else return $this->createRemote(array("ssh", "-t", $server, $command), $options);
+	}
+
+	/**
+	 * Turn an array command in a string, escaping and concatenating each item
+	 * @param array $command Command array. First element is the command and all remaining are the arguments.
+	 * @return string String command
+	 */
+	function commandArrayToString($command) {
+		$string = escapeshellcmd(array_shift($command));
+		foreach($command as $arg) {
+			$string .= ' ' . escapeshellarg($arg);
+		}
+		return $string;
+	}
+
+}
+
+
+class Process {
+	protected $command;
+	protected $options;
+
+	function __construct($command, $options = array()) {
+		$this->command = $command;
+		$this->options = $options;
+	}
+
+	function exec($options = array()) {
+		$options = array_merge($this->options, $options);
 
 		$pipes = array();
 		$pipeSpec = array(
@@ -44,7 +91,7 @@ class Executor {
 				$options['outputFileAppend'] ? 'a' : 'w');
 		}
 
-		$process = proc_open($command, $pipeSpec, $pipes);
+		$process = proc_open($this->command, $pipeSpec, $pipes);
 
 		if($options['inputContent']) {
 			fwrite($pipes[0], $options['inputContent']);
@@ -81,31 +128,10 @@ class Executor {
 		$result['return'] = proc_close($process);
 
 		if($options['throwException'] && $result['return'] != 0)	{
-			throw new Exception("Command: $command\nExecution failed: returned {$result['return']}.\n"
+			throw new Exception("Command: $this->command\nExecution failed: returned {$result['return']}.\n"
 				. (empty($result['output']) ? "" : "Output:\n{$result['output']}"));
 		}
 
 		return $result;
 	}
-
-	function execRemote($server, $command, $options = array()) {
-		if(is_array($command)) $command = $this->commandArrayToString($command);
-
-		if(!empty($options['outputFile'])) return $this->execLocal(array("ssh", $server, $command), $options);
-		else return $this->execLocal(array("ssh", "-t", $server, $command), $options);
-	}
-
-	/**
-	 * Turn an array command in a string, escaping and concatenating each item
-	 * @param array $command Command array. First element is the command and all remaining are the arguments.
-	 * @return string String command
-	 */
-	function commandArrayToString($command) {
-		$string = escapeshellcmd(array_shift($command));
-		foreach($command as $arg) {
-			$string .= ' ' . escapeshellarg($arg);
-		}
-		return $string;
-	}
-
 }

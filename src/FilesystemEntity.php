@@ -34,8 +34,20 @@ class FilesystemEntity {
 	 * @param  string $command Shell command, either a fully escaped string or an array
 	 */
 	function exec($command, $options = array()) {
-		if($this->server) return $this->executor->execRemote($this->server, $command, $options);
-		else return $this->executor->execLocal($command, $options);
+		if($this->server) $process = $this->executor->createRemote($this->server, $command, $options);
+		else $process = $this->executor->createLocal($command, $options);
+
+		return $process->exec();
+	}
+
+	/**
+	 * Create a process for later exection
+	 * @param  string $command Shell command, either a fully escaped string or an array
+	 * @return Process
+	 */
+	function createProcess($command, $options = array()) {
+		if($this->server) return $this->executor->createRemote($this->server, $command, $options);
+		else return $this->executor->createLocal($command, $options);
 	}
 
 	/**
@@ -83,7 +95,7 @@ class FilesystemEntity {
 		if($file == '@self') return true;
 
 		if($this->server) {
-			$result = $this->execRemote($this->server, "if [ -e " . escapeshellarg($file) . " ]; then echo yes; fi");
+			$result = $this->exec("if [ -e " . escapeshellarg($file) . " ]; then echo yes; fi");
 			return (trim($result['output']) == 'yes');
 
 		} else {
@@ -96,7 +108,7 @@ class FilesystemEntity {
 	 */
 	function writeFile($file, $content) {
 		if($this->server) {
-			$this->execRemote($this->server, "echo " . escapeshellarg($content) . " > " . escapeshellarg($file));
+			$this->exec("echo " . escapeshellarg($content) . " > " . escapeshellarg($file));
 
 		} else {
 			file_put_contents($file, $content);
