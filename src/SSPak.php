@@ -21,22 +21,22 @@ class SSPak {
 				"method" => "help",
 			),
 			"save" => array(
-				"description" => "Save a .sspak file from a site.",
+				"description" => "Save a .sspak.phar file from a site.",
 				"unnamedArgs" => array("webroot", "sspak file"),
 				"method" => "save",
 			),
 			"load" => array(
-				"description" => "Load an .sspak into an environment. Does not backup - be careful!",
+				"description" => "Load a .sspak.phar file into an environment. Does not backup - be careful!",
 				"unnamedArgs" => array("sspak file", "webroot"),
 				"method" => "load",
 			),
 			"install" => array(
-				"description" => "Install an .sspak into a new environment.",
+				"description" => "Install a .sspak.phar file into a new environment.",
 				"unnamedArgs" => array("sspak file", "new webroot"),
 				"method" => "install",
 			),
 			"bundle" => array(
-				"description" => "Bundle a .sspak into a self-extracting executable installer.",
+				"description" => "Bundle a .sspak.phar file into a self-extracting executable installer.",
 				"unnamedArgs" => array("sspak file", "executable"),
 				"method" => "bundle",
 			),
@@ -62,7 +62,7 @@ class SSPak {
 	}
 
 	/**
-	 * Save an .sspak file
+	 * Save a .sspak.phar file
 	 */
 	function save($args) {
 		$executor = $this->executor;
@@ -74,6 +74,8 @@ class SSPak {
 
 		$webroot = new Webroot($unnamedArgs[0], $executor);
 		$file = $unnamedArgs[1];
+		if(file_exists($file)) throw new Exception( "File '$file' already exists.");
+
 		$sspak = new SSPakFile($file, $executor);
 
 		if(!empty($namedArgs['from-sudo'])) $webroot->setSudo($namedArgs['from-sudo']);
@@ -90,8 +92,6 @@ class SSPak {
 		// Get the environment details
 		$details = $webroot->sniff();
 
-		if(file_exists($file)) throw new Exception( "File '$file' already exists.");
-
 		// Create a build folder for the sspak file
 		$buildFolder = "/tmp/sspak-" . rand(100000,999999);
 		$webroot->exec(array('mkdir', $buildFolder));
@@ -100,7 +100,7 @@ class SSPak {
 		$assetsFile = "$buildFolder/assets.tar.gz";
 		$gitRemoteFile = "$buildFolder/git-remote";
 
-		// Files to include in the .sspak file
+		// Files to include in the .sspak.phar file
 		$fileList = array();
 
 		// Save DB
@@ -110,62 +110,60 @@ class SSPak {
 			if(!method_exists($this,$dbFunction)) {
 				throw new Exception("Can't process database type '" . $details['db_type'] . "'");
 			}
-			$this->$dbFunction($webroot, $details, $dbFile);
-			$fileList[] = basename($dbFile);
+			$this->$dbFunction($webroot, $details, $sspak, basename($dbFile));
 		}
 
 		// Save Assets
 		if($pakParts['assets']) {
-			$this->getassets($webroot, $details['assets_path'], $assetsFile);
-			$fileList[] = basename($assetsFile);
+			$this->getassets($webroot, $details['assets_path'], $sspak, basename($assetsFile));
 		}
 
 		// Save git-remote
 		if($pakParts['git-remote']) {
-			if($this->getgitremote($webroot, $gitRemoteFile)) {
-				$fileList[] = basename($gitRemoteFile);
-			}
+			$this->getgitremote($webroot, $sspak, basename($gitRemoteFile));
 		}
 
-		// Create the sspak file
-		$webroot->exec(
-			array_merge(array('tar', '-C', $buildFolder, '-c', '-f','-'), $fileList),
-			array('outputFile' => $file)
-		);
-		
 		// Remove the build folder
 		$webroot->unlink($buildFolder);
 	}
 
-	function getdb_MySQLDatabase($webroot, $conf, $filename) {
+	function getdb_MySQLDatabase($webroot, $conf, $sspak, $filename) {
 		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
 		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
 		$databaseArg = escapeshellarg($conf['db_database']);
 		$hostArg = (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') ? escapeshellarg("--host=".$conf['db_server']) : '';
 		$filenameArg = escapeshellarg($filename);
 
-		return $webroot->exec("mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick  --set-charset --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg | gzip -c > $filenameArg");
+		$dumpCommand = "mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick  --set-charset --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg | gzip -c";
+		$stream = $sspak->writeStreamForFile($filename);
+		$webroot->exec($dumpCommand, array('outputStream' => $stream));
+		fclose($stream);
+		return true;
 	}
 
-	function getdb_PostgreSQLDatabase($webroot, $conf, $filename) {
+	function getdb_PostgreSQLDatabase($webroot, $conf, $sspak, $filename) {
 		$usernameArg = escapeshellarg("--username=".$conf['db_username']);
 		$passwordArg = "PGPASSWORD=".escapeshellarg($conf['db_password']);
 		$databaseArg = escapeshellarg($conf['db_database']);
 		$hostArg = escapeshellarg("--host=".$conf['db_server']);
 		$filenameArg = escapeshellarg($filename);
 
-		return $webroot->exec("$passwordArg pg_dump --clean $usernameArg $hostArg $databaseArg | gzip -c > $filenameArg");
+		$dumpCommand = "$passwordArg pg_dump --clean $usernameArg $hostArg $databaseArg | gzip -c";
+		$stream = $sspak->writeStreamForFile($filename);
+		$webroot->exec($dumpCommand, array('outputStream' => $stream));
+		fclose($stream);
 	}
 
-	function getassets($webroot, $assetsPath, $filename) {
+	function getassets($webroot, $assetsPath, $sspak, $filename) {
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
 		$assetsBaseArg = escapeshellarg(basename($assetsPath));
-		$filenameArg = escapeshellarg($filename);
 
-		return $webroot->exec("cd $assetsParentArg && tar czf $filenameArg $assetsBaseArg");
+		$stream = $sspak->writeStreamForFile($filename);
+		$webroot->exec("cd $assetsParentArg && tar czf - $assetsBaseArg", array('outputStream' => $stream));
+		fclose($stream);
 	}
 
-	function getgitremote($webroot, $gitRemoteFile) {
+	function getgitremote($webroot, $sspak, $gitRemoteFile) {
 		// Only do anything if we're copying from a git checkout
 		$gitRepo = $webroot->getPath() .'/.git';
 		if($webroot->exists($gitRepo)) {
@@ -194,7 +192,7 @@ class SSPak {
 
 			$content = "remote = $remoteURL\nbranch = $currentBranch\nsha = $sha\n";
 
-			$webroot->writeFile($gitRemoteFile, $content);
+			$sspak->writeFile($gitRemoteFile, $content);
 
 			return true;
 		}

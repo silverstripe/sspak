@@ -26,7 +26,7 @@ class Webroot extends FilesystemEntity {
 	function sniff() {
 		global $snifferFileContent;
 
-		if(!$snifferFileContent) $snifferFileContent = file_get_contents(SRC_ROOT . 'sspak-sniffer.php');
+		if(!$snifferFileContent) $snifferFileContent = file_get_contents(PACKAGE_ROOT . 'src/sspak-sniffer.php');
 
 		$remoteSniffer = '/tmp/sspak-sniffer-' . rand(100000,999999) . '.php';
 		$this->uploadContent($snifferFileContent, $remoteSniffer);
@@ -90,7 +90,10 @@ class Webroot extends FilesystemEntity {
 
 		$this->exec("echo 'create database if not exists `" . addslashes($conf['db_database']) . "`' | mysql $usernameArg $passwordArg $hostArg");
 
-		return $sspak->pipeContent("database.sql.gz", "gunzip -c | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg");
+		$stream = $sspak->readStreamForFile('database.sql.gz');
+		$this->exec("gunzip -c | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg", array('inputStream' => $stream));
+		fclose($stream);
+		return true;
 	}
 
 	function putdb_PostgreSQLDatabase($conf, $sspak) {
@@ -105,7 +108,9 @@ class Webroot extends FilesystemEntity {
 			$this->exec("$passwordArg createdb $usernameArg $hostArg $databaseArg");
 		}
 
-		return $sspak->pipeContent("database.sql.gz", "gunzip -c | $passwordArg psql $usernameArg $hostArg $databaseArg");
+		$stream = $sspak->readStreamForFile('database.sql.gz');
+		return $this->exec("gunzip -c | $passwordArg psql $usernameArg $hostArg $databaseArg", array('inputStream' => $stream));
+		fclose($stream);
 	}
 
 	function putassets($sspak) {
@@ -120,7 +125,9 @@ class Webroot extends FilesystemEntity {
 		$this->exec("if [ -d $assetsBaseArg ]; then mv $assetsBaseArg $assetsBaseOldArg; fi");
 
 		// Extract assets
-		$sspak->pipeContent("assets.tar.gz", "tar xzf - -C $assetsParentArg");
+		$stream = $sspak->readStreamForFile('assets.tar.gz');
+		$this->exec("tar xzf - -C $assetsParentArg", array('inputStream' => $stream));
+		fclose($stream);
 
 		// Remove assets.old
 		$this->exec("if [ -d $assetsBaseOldArg ]; then rm -rf $assetsBaseOldArg; fi");
