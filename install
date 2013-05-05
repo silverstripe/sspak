@@ -11,7 +11,9 @@ chmod("/tmp/sspak", 02775);
 
 // Ask where to copy it to
 echo "Where would you put the sspak binary? [/usr/local/bin]: ";
-$stdin = fopen('php:://stdin');
+$stdin = fopen('php://stdin','r');
+if(!$stdin) die();
+
 $response = trim(fgets($stdin));
 if(!$response) $response = "/usr/local/bin";
 fclose($stdin);
