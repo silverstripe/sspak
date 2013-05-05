@@ -129,7 +129,7 @@ class SSPak {
 		$hostArg = (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') ? escapeshellarg("--host=".$conf['db_server']) : '';
 		$filenameArg = escapeshellarg($filename);
 
-		$process = $webroot->createProcess("mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick  --set-charset --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg | gzip -c");
+		$process = $webroot->createProcess("mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick  --set-charset --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg | gzip -c -f");
 		$sspak->writeFileFromProcess($filename, $process);
 		return true;
 	}
@@ -141,7 +141,7 @@ class SSPak {
 		$hostArg = escapeshellarg("--host=".$conf['db_server']);
 		$filenameArg = escapeshellarg($filename);
 
-		$process = $webroot->createProcess("$passwordArg pg_dump --clean $usernameArg $hostArg $databaseArg | gzip -c");
+		$process = $webroot->createProcess("$passwordArg pg_dump --clean $usernameArg $hostArg $databaseArg | gzip -c -f");
 		$sspak->writeFileFromProcess($filename, $process);
 		return true;
 	}
@@ -150,7 +150,7 @@ class SSPak {
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
 		$assetsBaseArg = escapeshellarg(basename($assetsPath));
 
-		$process = $webroot->createProcess("cd $assetsParentArg && tar czf - $assetsBaseArg");
+		$process = $webroot->createProcess("cd $assetsParentArg && tar cf - $assetsBaseArg | gzip -c -f");
 		$sspak->writeFileFromProcess($filename, $process);
 	}
 
@@ -162,7 +162,7 @@ class SSPak {
 			$output = $webroot->exec(array('git', '--git-dir='.$gitRepo, 'branch'));
 			if(preg_match("/\* ([^ \n]*)/", $output['output'], $matches)) {
 				// If there is a current branch, use that branch's remove
-				$currentBranch = $matches[1];
+				$currentBranch = trim($matches[1]);
 				$output = $webroot->exec(array('git', '--git-dir='.$gitRepo, 'config','--get',"branch.$currentBranch.remote"));
 				$remoteName = trim($output['output']);
 				if(!$remoteName) $remoteName = 'origin';

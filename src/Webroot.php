@@ -91,7 +91,7 @@ class Webroot extends FilesystemEntity {
 		$this->exec("echo 'create database if not exists `" . addslashes($conf['db_database']) . "`' | mysql $usernameArg $passwordArg $hostArg");
 
 		$stream = $sspak->readStreamForFile('database.sql.gz');
-		$this->exec("gunzip -c | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg", array('inputStream' => $stream));
+		$this->exec("gunzip -c -f | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg", array('inputStream' => $stream));
 		fclose($stream);
 		return true;
 	}
@@ -109,7 +109,7 @@ class Webroot extends FilesystemEntity {
 		}
 
 		$stream = $sspak->readStreamForFile('database.sql.gz');
-		return $this->exec("gunzip -c | $passwordArg psql $usernameArg $hostArg $databaseArg", array('inputStream' => $stream));
+		return $this->exec("gunzip -c -f | $passwordArg psql $usernameArg $hostArg $databaseArg", array('inputStream' => $stream));
 		fclose($stream);
 	}
 
