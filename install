@@ -1,0 +1,24 @@
+<?php
+
+// Download the file
+echo "Downloading...\n";
+$sspak = file_get_contents("http://sminnee.github.io/sspak/sspak.phar");
+
+// Write to /tmp
+echo "Writing to /tmp/sspak...\n";
+file_put_contents("/tmp/sspak", $sspak);
+chmod("/tmp/sspak", 02775);
+
+// Ask where to copy it to
+echo "Where would you put the sspak binary? [/usr/local/bin]: ";
+$response = trim(fgets(STDIN));
+if(!$response) $response = "/usr/local/bin";
+
+// Write directly, or via sudo, depending on access writes
+if(is_writable($response)) {
+	rename("/tmp/sspak", "$response/sspak");
+} else {
+	passthru("sudo mv /tmp/sspak " . escapeshellarg($response));
+}
+
+echo"\nDone! Run 'sspak help' to get started.\n\n";
