@@ -31,6 +31,9 @@ if(empty($_SERVER['argv'][1])) {
 	$versionFile = dirname($pharFile) . '/version';
 	file_put_contents($versionFile, `git log -1 --oneline --pretty=%H`);
 
+	echo "Copying install file to build...\n";
+	copy(PACKAGE_ROOT . "bin/install", dirname($pharFile) . "/install");
+
 	echo "Checking out gh-pages...\n";
 	try {
 		shell_cmd("git checkout gh-pages");
@@ -39,8 +42,9 @@ if(empty($_SERVER['argv'][1])) {
 		echo "Committing sspak.phar and version into it...\n";
 		shell_cmd("cp build/sspak.phar .");
 		shell_cmd("cp build/version .");
-		shell_cmd("git add sspak.phar version");
-		shell_cmd("git commit -m 'Updating sspak.phar pacage'");
+		shell_cmd("cp build/install .");
+		shell_cmd("git add sspak.phar version install");
+		shell_cmd("git commit -m 'Updating sspak.phar package'");
 
 		echo "Pushing to github server...\n";
 		shell_cmd("git push");

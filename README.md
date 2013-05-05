@@ -19,12 +19,32 @@ An sspak file is either a Phar (executable) file or a Tar (non-executable) file,
 
 By convention, the file should have the extension `.sspak` for non-executable versions, and `.sspak.phar` for executable versions.
 
+Installation
+------------
+
+You can run the installation script one of two ways.  If you have CURL, run this command (everything except for the `$>` part):
+
+    $> curl -sS http://sminnee.github.io/sspak/install | php -- /usr/local/bin
+
+The final argument is the directory that the script will be loaded into.  If omitted, the script will be installed into the current directory.  If you don't have permission to write to the directory, "sudo" will be used to escalate permissions.
+
+For example, this would also work:
+
+    $> cd /usr/local/bin
+    $> curl -sS http://sminnee.github.io/sspak/install | sudo php
+
+If you prefer not to use the installer, you can download the script and copy it to your executable path as follows:
+
+    $> wget http://sminnee.github.io/sspak/sspak.phar
+    $> chmod +x sspak.phar
+    $> sudo mv sspak.phar /usr/local/bin/sspak
+
 Use
 ---
 
 All sspak commands take the following general form.
 
-	$> sspak (command) (from) (to)
+    $> sspak (command) (from) (to)
 
 Create an sspak file and save to /tmp:
 
