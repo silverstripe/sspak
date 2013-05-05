@@ -4,25 +4,32 @@
 echo "Downloading...\n";
 $sspak = file_get_contents("http://sminnee.github.io/sspak/sspak.phar");
 
+if(!empty($_SERVER['argv'][1])) {
+	$destFolderArg = $_SERVER['argv'][1];
+	$CLI_destFolderArg = escapeshellarg($destFolderArg);
+	// Rationalise destfolder (parse ~, etc)
+	$destFolder = trim(`cd $CLI_destFolderArg && pwd`);
+	if(!$destFolder) {
+		echo "ERROR: Can't find folder $destFolderArg!\n";
+		die();
+	}
+
+} else {
+	$destFolder = getcwd();
+}
+
 // Write to /tmp
 echo "Writing to /tmp/sspak...\n";
 file_put_contents("/tmp/sspak", $sspak);
 chmod("/tmp/sspak", 02775);
 
-// Ask where to copy it to
-echo "Where would you put the sspak binary? [/usr/local/bin]: ";
-$stdin = fopen('php://stdin','r');
-if(!$stdin) die();
-
-$response = trim(fgets($stdin));
-if(!$response) $response = "/usr/local/bin";
-fclose($stdin);
+echo "Copying to " . realpath($destFolder) . "...";
 
 // Write directly, or via sudo, depending on access writes
-if(is_writable($response)) {
-	rename("/tmp/sspak", "$response/sspak");
+if(is_writable($destFolder)) {
+	rename("/tmp/sspak", "$destFolder/sspak");
 } else {
-	passthru("sudo mv /tmp/sspak " . escapeshellarg($response));
+	passthru("sudo mv /tmp/sspak " . escapeshellarg($destFolder));
 }
 
 echo"\nDone! Run 'sspak help' to get started.\n\n";
