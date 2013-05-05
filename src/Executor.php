@@ -41,10 +41,9 @@ class Executor {
 	}
 
 	function createRemote($server, $command, $options = array()) {
-		if(is_array($command)) $command = $this->commandArrayToString($command);
-
-		if(!empty($options['outputFile'])) return $this->createLocal(array("ssh", $server, $command), $options);
-		else return $this->createLocal(array("ssh", "-t", $server, $command), $options);
+		$process = $this->createLocal($command, $options);
+		$process->setRemoteServer($server);
+		return $process;
 	}
 
 	/**
@@ -66,14 +65,28 @@ class Executor {
 class Process {
 	protected $command;
 	protected $options;
+	protected $remoteServer = null;
 
 	function __construct($command, $options = array()) {
 		$this->command = $command;
 		$this->options = $options;
 	}
 
+	function setRemoteServer($remoteServer) {
+		$this->remoteServer = $remoteServer;
+	}
+
 	function exec($options = array()) {
 		$options = array_merge($this->options, $options);
+
+		// Modify command for remote execution, if necessary.
+		if($this->remoteServer) {
+			if(!empty($options['outputFile']) || !empty($options['outputStream'])) $ssh = "ssh -T ";
+			else $ssh = "ssh -t ";
+			$command = $ssh . escapeshellarg($this->remoteServer) . ' ' . escapeshellarg($this->command);
+		} else {
+			$command = $this->command;
+		}
 
 		$pipes = array();
 		$pipeSpec = array(
@@ -91,7 +104,7 @@ class Process {
 				$options['outputFileAppend'] ? 'a' : 'w');
 		}
 
-		$process = proc_open($this->command, $pipeSpec, $pipes);
+		$process = proc_open($command, $pipeSpec, $pipes);
 
 		if($options['inputContent']) {
 			fwrite($pipes[0], $options['inputContent']);
@@ -128,7 +141,7 @@ class Process {
 		$result['return'] = proc_close($process);
 
 		if($options['throwException'] && $result['return'] != 0)	{
-			throw new Exception("Command: $this->command\nExecution failed: returned {$result['return']}.\n"
+			throw new Exception("Command: $command\nExecution failed: returned {$result['return']}.\n"
 				. (empty($result['output']) ? "" : "Output:\n{$result['output']}"));
 		}
 

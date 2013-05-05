@@ -129,7 +129,7 @@ class SSPak {
 		$hostArg = (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') ? escapeshellarg("--host=".$conf['db_server']) : '';
 		$filenameArg = escapeshellarg($filename);
 
-		$process = $webroot->createProcess("mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick  --set-charset --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg | gzip -c -f");
+		$process = $webroot->createProcess("mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick  --set-charset --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg | gzip -c");
 		$sspak->writeFileFromProcess($filename, $process);
 		return true;
 	}
@@ -141,7 +141,7 @@ class SSPak {
 		$hostArg = escapeshellarg("--host=".$conf['db_server']);
 		$filenameArg = escapeshellarg($filename);
 
-		$process = $webroot->createProcess("$passwordArg pg_dump --clean $usernameArg $hostArg $databaseArg | gzip -c -f");
+		$process = $webroot->createProcess("$passwordArg pg_dump --clean $usernameArg $hostArg $databaseArg | gzip -c");
 		$sspak->writeFileFromProcess($filename, $process);
 		return true;
 	}
@@ -150,7 +150,7 @@ class SSPak {
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
 		$assetsBaseArg = escapeshellarg(basename($assetsPath));
 
-		$process = $webroot->createProcess("cd $assetsParentArg && tar cf - $assetsBaseArg | gzip -c -f");
+		$process = $webroot->createProcess("cd $assetsParentArg && tar cf - $assetsBaseArg | gzip -c");
 		$sspak->writeFileFromProcess($filename, $process);
 	}
 
