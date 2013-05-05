@@ -11,14 +11,8 @@ require_once(PACKAGE_ROOT . 'src/FilesystemEntity.php');
 require_once(PACKAGE_ROOT . 'src/SSPakFile.php');
 require_once(PACKAGE_ROOT . 'src/Webroot.php');
 
-// This will be rewritten to "true" as part of the self-extractor generation
-$isSelfExtracting = false;
-
-// This will be rewritten to contain the content as part of the self-extractor generation
-$snifferFileContent = '';
-
 $argObj = new Args($_SERVER['argv']);
-
+/*
 // Special case for self-extracting sspaks
 if($isSelfExtracting) {
 	$argObj->unshiftUnnamed('@self');
@@ -27,6 +21,7 @@ if($isSelfExtracting) {
 		exit(3);
 	}
 }
+*/
 
 $ssPak = new SSPak(new Executor);
 
