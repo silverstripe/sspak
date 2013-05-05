@@ -82,12 +82,7 @@ class SSPak {
 		else if(!empty($namedArgs['sudo'])) $webroot->setSudo($namedArgs['sudo']);
 
 		// Look up which parts of the sspak are going to be saved
-		$pakParks = array();
-		foreach(array('assets','db','git-remote') as $part) {
-			$pakParts[$part] = !empty($namedArgs[$part]);
-		}
-		// Default to db and assets
-		if(!array_filter($pakParts)) $pakParts = array('db' => true, 'assets' => true, 'git-remote' => true);
+		$pakParts = $args->pakParts();
 
 		// Get the environment details
 		$details = $webroot->sniff();
