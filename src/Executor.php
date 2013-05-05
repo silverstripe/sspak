@@ -43,8 +43,8 @@ class Executor {
 	function createRemote($server, $command, $options = array()) {
 		if(is_array($command)) $command = $this->commandArrayToString($command);
 
-		if(!empty($options['outputFile'])) return $this->createRemote(array("ssh", $server, $command), $options);
-		else return $this->createRemote(array("ssh", "-t", $server, $command), $options);
+		if(!empty($options['outputFile'])) return $this->createLocal(array("ssh", $server, $command), $options);
+		else return $this->createLocal(array("ssh", "-t", $server, $command), $options);
 	}
 
 	/**
