@@ -3,11 +3,102 @@
 	<head>
 		<meta charset="utf-8"> 
 		<title>SSPak</title>
+		<style type="text/css">
+		* {
+			font-family: Helvetica, Arial;
+		}
+		body {
+			max-width: 1100px;
+			margin: auto;
+		}
+		h1 {
+			font-size: 72px;
+			margin: 48px 0 24px 0;
+			padding: 0;
+		}
+		h2 {
+			font-size: 24px;
+			margin: 24px 0 24px 0;
+			padding: 0;
+		}
+		p {
+			font-size: 16px;
+			line-height: 24px;
+		}
+		pre, code, pre *, code * {
+			font-family: Courier, Courier New;
+			font-size: 16px;
+			line-height: 24px;
+		}
+		pre {
+			padding: 10px;
+			background-color: #333;
+			color: #CCC;
+			border: 1px #777 solid;
+		}
+		pre.big, pre.big * {
+			font-size: 24px;
+			border-width: 5px;
+			cursor: pointer;
+		}
+		pre .copy-instruction {
+			margin-top: 10px;
+			margin-left: 43px;
+			font-size: 16px;
+			font-family: Helvetica, Arial;
+		}
+		</style>
 	</head>
 	<body>
 		<h1>SSPak</h1>
 		<p>SSPak is a database and asset bundling tool for SilverStripe.  It was created by Sam Minnée.</p>
-		<p><a href="sspak.phar">Download</a></p>
-		<p><a href="http://github.com/sminnee/sspak/">Visit the GitHub page</a></p>
+
+		<h2>Install</h2>
+		<p>You can run the installation script one of two ways.  If you have CURL, run this command (everything except for the <code>$&gt;</code> part)
+
+		<pre class="big">$&gt; <span class="content">curl -sS http://sminnee.github.io/sspak/install | php -- /usr/local/bin</span><div style="display: none" class="copy-instruction">Now press ⌘-C, and paste into your terminal.</div></pre>
+
+		<p>The final argument is the directory that the script will be loaded into.  If omitted, the script will be installed into the current directory.  If you don't have permission to write to the directory, "sudo" will be used to escalate permissions.</p>
+
+		<p>For example, this would also work:</p>
+
+		<pre>$&gt; cd /usr/local/bin
+$&gt; curl -sS http://sminnee.github.io/sspak/install | sudo php</pre>
+
+
+		<p>If you prefer not to use the installer, you can download the script and copy it to your executable path as follows:</p>
+
+		<pre>$&gt; wget http://sminnee.github.io/sspak/sspak.phar
+$&gt; chmod +x sspak.phar
+$&gt; sudo mv sspak.phar /usr/local/bin/sspak</pre>
+
+		<p><code>sspak.phar</code> is available for <a href="sspak.phar">download here</a>.</p>
+
+		<h2>Documentation</h2>
+		<p>For more information, please <a href="http://github.com/sminnee/sspak/">visit the GitHub page</a>.</p>
+		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+		<script>
+			$("pre.big").click(function() {
+				selectText($(this).find('.content')[0]);
+				$(this).find('.copy-instruction').show();
+			});
+
+			function selectText(text) {
+				var doc = document;
+
+				if (doc.body.createTextRange) { // ms
+					var range = doc.body.createTextRange();
+					range.moveToElementText(text);
+					range.select();
+				} else if (window.getSelection) { // moz, opera, webkit
+					var selection = window.getSelection();            
+					var range = doc.createRange();
+					range.selectNodeContents(text);
+					selection.removeAllRanges();
+					selection.addRange(range);
+				}
+			}
+
+		</script>
 	</body>
 </html>
