@@ -208,20 +208,6 @@ class SSPak {
 		// Validation
 		if(!$sspak->exists()) throw new Exception( "File '$file' doesn't exist.");
 
-		// Ensure the pakfile is on the destination server
-		// If local, we can just use the sspak file directly
-		if($webroot->isLocal()) {
-			$sspakFile = $file;
-
-		} else {
-			// Give a name for sspakFile /tmp
-			$sspakFile = "/tmp/sspak-" . rand(100000,999999) . ".sspak";
-
-			// Upload the sspak file
-			$webroot->upload($file, $sspakFile);
-			$sspak = new SSPakFile($webroot->getServer().":$sspakFile", $executor);
-		}
-
 		// Push database, if necessary
 		if($pakParts['db'] && $sspak->contains('database.sql.gz')) {
 			$webroot->putdb($sspak);
@@ -231,9 +217,6 @@ class SSPak {
 		if($pakParts['assets'] && $sspak->contains('assets.tar.gz')) {
 			$webroot->putassets($sspak);
 		}
-
-		// Remove sspak from the server
-		if($sspakFile != $file) $webroot->unlink($sspakFile);
 	}
 
 	/**
@@ -264,21 +247,6 @@ class SSPak {
 			$webroot->putgit($details);
 		}
 
-		// Ensure the pakfile is on the destination server
-		// If local, we can just use the sspak file directly
-		if($webroot->isLocal()) {
-			$sspakFile = $file;
-
-		} else {
-			// Give a name for sspakFile /tmp
-			$sspakFile = "/tmp/sspak-" . rand(100000,999999) . ".sspak";
-
-			// Upload the sspak file
-			$webroot->upload($file, $sspakFile);
-			$sspak = new SSPakFile($webroot->getServer().":$sspakFile", $executor);
-
-		}
-
 		// Push database, if necessary
 		if($pakParts['db'] && $sspak->contains('database.sql.gz')) {
 			$webroot->putdb($sspak);
@@ -288,9 +256,6 @@ class SSPak {
 		if($pakParts['assets'] && $sspak->contains('assets.tar.gz')) {
 			$webroot->putassets($sspak);
 		}
-
-		// Remove sspak from the server
-		if($sspakFile != $file) $webroot->unlink($sspakFile);
 	}
 
 	/**

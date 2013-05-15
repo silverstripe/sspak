@@ -7,7 +7,7 @@ class SSPakFile extends FilesystemEntity {
 
 	function __construct($path, $executor, $pharAlias = 'sspak.phar') {
 		parent::__construct($path, $executor);
-		if(!$this->isLocal()) throw new LogicException("Can't manipulate remote .sspak.phar filesize(filename), only remote webroots.");
+		if(!$this->isLocal()) throw new LogicException("Can't manipulate remote .sspak.phar files, only remote webroots.");
 
 		$this->pharAlias = $pharAlias;
 		
