@@ -39,6 +39,14 @@ If you prefer not to use the installer, you can download the script and copy it 
     $> chmod +x sspak.phar
     $> sudo mv sspak.phar /usr/local/bin/sspak
 
+Common Issues
+-------------
+
+    Creating archive disabled by the php.ini setting phar.readonly
+
+Set your phar.readonly setting to false in your php.ini (and php-cli.ini) files.
+
+
 Use
 ---
 
