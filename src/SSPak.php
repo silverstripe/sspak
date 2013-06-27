@@ -141,7 +141,7 @@ class SSPak {
 		$hostArg = escapeshellarg("--host=".$conf['db_server']);
 		$filenameArg = escapeshellarg($filename);
 
-		$process = $webroot->createProcess("$passwordArg pg_dump --clean $usernameArg $hostArg $databaseArg | gzip -c");
+		$process = $webroot->createProcess("$passwordArg pg_dump --clean --no-owner --no-tablespaces $usernameArg $hostArg $databaseArg | gzip -c");
 		$sspak->writeFileFromProcess($filename, $process);
 		return true;
 	}
