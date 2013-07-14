@@ -150,7 +150,7 @@ class SSPak {
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
 		$assetsBaseArg = escapeshellarg(basename($assetsPath));
 
-		$process = $webroot->createProcess("cd $assetsParentArg && tar cf - $assetsBaseArg | gzip -c");
+		$process = $webroot->createProcess("cd $assetsParentArg && tar cfh - $assetsBaseArg | gzip -c");
 		$sspak->writeFileFromProcess($filename, $process);
 	}
 
