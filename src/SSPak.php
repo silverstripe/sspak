@@ -21,9 +21,15 @@ class SSPak {
 				"method" => "help",
 			),
 			"save" => array(
-				"description" => "Save a .sspak.phar file from a site.",
+				"description" => "Save an .sspak.phar file from a site.",
 				"unnamedArgs" => array("webroot", "sspak file"),
 				"method" => "save",
+			),
+			"saveexisting" => array(
+				"description" => "Save an .sspak.phar file from existing files.",
+				"unnamedArgs" => array("sspak file"),
+				"namedArgs" => array("db", "assets"),
+				"method" => "saveexisting"
 			),
 			"load" => array(
 				"description" => "Load a .sspak.phar file into an environment. Does not backup - be careful!",
@@ -57,7 +63,42 @@ class SSPak {
 			if(!empty($info['unnamedArgs'])) {
 				foreach($info['unnamedArgs'] as $arg) echo " ($arg)";
 			}
+			if(!empty($info['namedArgs'])) {
+				foreach($info['namedArgs'] as $arg) echo " --$arg=\"$arg value\"";
+			}
 			echo "\n  {$info['description']}\n\n";
+		}
+	}
+
+	/**
+	 * Save an existing database and/or assets into an .sspak.phar file.
+	 * Does the same as {@link save()} but doesn't require an existing site.
+	 */
+	function saveexisting($args) {
+		$executor = $this->executor;
+
+		$args->requireUnnamed(array('sspak file'));
+		$unnamedArgs = $args->getUnnamedArgs();
+		$namedArgs = $args->getNamedArgs();
+
+		$sspak = new SSPakFile($unnamedArgs[0], $executor);
+
+		// Look up which parts of the sspak are going to be saved
+		$pakParts = $args->pakParts();
+
+		$filesystem = new FilesystemEntity(null, $executor);
+
+		if($pakParts['db']) {
+			$dbPath = escapeshellarg($namedArgs['db']);
+			$process = $filesystem->createProcess("cat $dbPath | gzip -c");
+			$sspak->writeFileFromProcess('database.sql.gz', $process);
+		}
+
+		if($pakParts['assets']) {
+			$assetsParentArg = escapeshellarg(dirname($namedArgs['assets']));
+			$assetsBaseArg = escapeshellarg(basename($namedArgs['assets']));
+			$process = $filesystem->createProcess("cd $assetsParentArg && tar cfh - $assetsBaseArg | gzip -c");
+			$sspak->writeFileFromProcess('assets.tar.gz', $process);
 		}
 	}
 
