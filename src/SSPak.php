@@ -26,10 +26,15 @@ class SSPak {
 				"method" => "save",
 			),
 			"saveexisting" => array(
-				"description" => "Save an .sspak.phar file from existing files.",
+				"description" => "Save an .sspak.phar file given paths to existing database sql dump file and/or assets",
 				"unnamedArgs" => array("sspak file"),
 				"namedArgs" => array("db", "assets"),
 				"method" => "saveexisting"
+			),
+			"extract" => array(
+				"description" => "Extract the contents of a sspak file into the current working directory",
+				"unnamedArgs" => array("sspak file", "destination path"),
+				"method" => "extract"
 			),
 			"load" => array(
 				"description" => "Load a .sspak.phar file into an environment. Does not backup - be careful!",
@@ -100,6 +105,27 @@ class SSPak {
 			$process = $filesystem->createProcess("cd $assetsParentArg && tar cfh - $assetsBaseArg | gzip -c");
 			$sspak->writeFileFromProcess('assets.tar.gz', $process);
 		}
+	}
+
+	/**
+	 * Extracts an existing database and/or assets from a sspak into the given directory,
+	 * defaulting the current working directory if the destination is not given.
+	 */
+	function extract($args) {
+		$executor = $this->executor;
+
+		$args->requireUnnamed(array('source sspak file'));
+		$unnamedArgs = $args->getUnnamedArgs();
+		$file = $unnamedArgs[0];
+		$dest = !empty($unnamedArgs[1]) ? $unnamedArgs[1] : getcwd();
+
+		$sspak = new SSPakFile($file, $executor);
+
+		// Validation
+		if(!$sspak->exists()) throw new Exception("File '$file' doesn't exist.");
+
+		$phar = $sspak->getPhar();
+		$phar->extractTo($dest);
 	}
 
 	/**
