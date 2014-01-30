@@ -21,9 +21,20 @@ class SSPak {
 				"method" => "help",
 			),
 			"save" => array(
-				"description" => "Save a .sspak.phar file from a site.",
+				"description" => "Save an .sspak.phar file from a site.",
 				"unnamedArgs" => array("webroot", "sspak file"),
 				"method" => "save",
+			),
+			"saveexisting" => array(
+				"description" => "Save an .sspak.phar file given paths to existing database sql dump file and/or assets",
+				"unnamedArgs" => array("sspak file"),
+				"namedArgs" => array("db", "assets"),
+				"method" => "saveexisting"
+			),
+			"extract" => array(
+				"description" => "Extract the contents of a sspak file into the current working directory",
+				"unnamedArgs" => array("sspak file", "destination path"),
+				"method" => "extract"
 			),
 			"load" => array(
 				"description" => "Load a .sspak.phar file into an environment. Does not backup - be careful!",
@@ -57,8 +68,64 @@ class SSPak {
 			if(!empty($info['unnamedArgs'])) {
 				foreach($info['unnamedArgs'] as $arg) echo " ($arg)";
 			}
+			if(!empty($info['namedArgs'])) {
+				foreach($info['namedArgs'] as $arg) echo " --$arg=\"$arg value\"";
+			}
 			echo "\n  {$info['description']}\n\n";
 		}
+	}
+
+	/**
+	 * Save an existing database and/or assets into an .sspak.phar file.
+	 * Does the same as {@link save()} but doesn't require an existing site.
+	 */
+	function saveexisting($args) {
+		$executor = $this->executor;
+
+		$args->requireUnnamed(array('sspak file'));
+		$unnamedArgs = $args->getUnnamedArgs();
+		$namedArgs = $args->getNamedArgs();
+
+		$sspak = new SSPakFile($unnamedArgs[0], $executor);
+
+		// Look up which parts of the sspak are going to be saved
+		$pakParts = $args->pakParts();
+
+		$filesystem = new FilesystemEntity(null, $executor);
+
+		if($pakParts['db']) {
+			$dbPath = escapeshellarg($namedArgs['db']);
+			$process = $filesystem->createProcess("cat $dbPath | gzip -c");
+			$sspak->writeFileFromProcess('database.sql.gz', $process);
+		}
+
+		if($pakParts['assets']) {
+			$assetsParentArg = escapeshellarg(dirname($namedArgs['assets']));
+			$assetsBaseArg = escapeshellarg(basename($namedArgs['assets']));
+			$process = $filesystem->createProcess("cd $assetsParentArg && tar cfh - $assetsBaseArg | gzip -c");
+			$sspak->writeFileFromProcess('assets.tar.gz', $process);
+		}
+	}
+
+	/**
+	 * Extracts an existing database and/or assets from a sspak into the given directory,
+	 * defaulting the current working directory if the destination is not given.
+	 */
+	function extract($args) {
+		$executor = $this->executor;
+
+		$args->requireUnnamed(array('source sspak file'));
+		$unnamedArgs = $args->getUnnamedArgs();
+		$file = $unnamedArgs[0];
+		$dest = !empty($unnamedArgs[1]) ? $unnamedArgs[1] : getcwd();
+
+		$sspak = new SSPakFile($file, $executor);
+
+		// Validation
+		if(!$sspak->exists()) throw new Exception("File '$file' doesn't exist.");
+
+		$phar = $sspak->getPhar();
+		$phar->extractTo($dest);
 	}
 
 	/**

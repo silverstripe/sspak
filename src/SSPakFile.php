@@ -24,6 +24,10 @@ class SSPakFile extends FilesystemEntity {
 		}
 	}
 
+	function getPhar() {
+		return $this->phar;
+	}
+
 	/**
 	 * Add the SSPak executable information into this SSPak file
 	 */

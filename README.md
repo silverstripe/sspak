@@ -66,6 +66,14 @@ Create an executable sspak file by adding a phar extension:
 
     $> sspak save me@prodserver:/var/www prod-site.sspak.phar
 
+Create an sspak from existing files:
+
+	$> sspak saveexisting --db=/path/to/database.sql --assets=/path/to/assets
+
+Extract files from an existing sspak into the specified directory:
+
+	$> sspak extract /tmp/site.sspak /destination/path
+
 Load an sspak file into a local instance:
 
     $> sspak load prod-site.sspak ~/Sites/devsite
