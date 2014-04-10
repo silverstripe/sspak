@@ -56,26 +56,26 @@
 		<h2>Install</h2>
 		<p>You can run the installation script one of two ways.  If you have CURL, run this command (everything except for the <code>$&gt;</code> part)
 
-		<pre class="big">$&gt; <span class="content">curl -sS http://sminnee.github.io/sspak/install | php -- /usr/local/bin</span><div style="display: none" class="copy-instruction">Now press ⌘-C, and paste into your terminal.</div></pre>
+		<pre class="big">$&gt; <span class="content">curl -sS http://silverstripe.github.io/sspak/install | php -- /usr/local/bin</span><div style="display: none" class="copy-instruction">Now press ⌘-C, and paste into your terminal.</div></pre>
 
 		<p>The final argument is the directory that the script will be loaded into.  If omitted, the script will be installed into the current directory.  If you don't have permission to write to the directory, "sudo" will be used to escalate permissions.</p>
 
 		<p>For example, this would also work:</p>
 
 		<pre>$&gt; cd /usr/local/bin
-$&gt; curl -sS http://sminnee.github.io/sspak/install | sudo php</pre>
+$&gt; curl -sS http://silverstripe.github.io/sspak/install | sudo php</pre>
 
 
 		<p>If you prefer not to use the installer, you can download the script and copy it to your executable path as follows:</p>
 
-		<pre>$&gt; wget http://sminnee.github.io/sspak/sspak.phar
+		<pre>$&gt; wget http://silverstripe.github.io/sspak/sspak.phar
 $&gt; chmod +x sspak.phar
 $&gt; sudo mv sspak.phar /usr/local/bin/sspak</pre>
 
 		<p><code>sspak.phar</code> is available for <a href="sspak.phar">download here</a>.</p>
 
 		<h2>Documentation</h2>
-		<p>For more information, please <a href="http://github.com/sminnee/sspak/">visit the GitHub page</a>.</p>
+		<p>For more information, please <a href="http://github.com/silverstripe/sspak/">visit the GitHub page</a>.</p>
 		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 		<script>
 			$("pre.big").click(function() {
