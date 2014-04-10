@@ -2,7 +2,7 @@
 
 // Download the file
 echo "Downloading...\n";
-$sspak = file_get_contents("http://sminnee.github.io/sspak/sspak.phar");
+$sspak = file_get_contents("http://silverstripe.github.io/sspak/sspak.phar");
 
 if(!empty($_SERVER['argv'][1])) {
 	$destFolderArg = $_SERVER['argv'][1];
