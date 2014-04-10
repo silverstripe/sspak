@@ -49,56 +49,48 @@
 		}
 		</style>
 	</head>
+
 	<body>
 		<h1>SSPak</h1>
 		<p>SSPak is a database and asset bundling tool for SilverStripe.</p>
 
-		<h2>Install</h2>
-		<p>You can run the installation script one of two ways.  If you have CURL, run this command (everything except for the <code>$&gt;</code> part)
+		<h2>Installation: Linux and OSX</h2>
 
-		<pre class="big">$&gt; <span class="content">curl -sS http://silverstripe.github.io/sspak/install | php -- /usr/local/bin</span><div style="display: none" class="copy-instruction">Now press ⌘-C, and paste into your terminal.</div></pre>
+		<h3>Method 1: Install script</h3>
+	
+		<p>Use the install script, where the final argument is the directory where the binary will be installed to.</p>
 
-		<p>The final argument is the directory that the script will be loaded into.  If omitted, the script will be installed into the current directory.  If you don't have permission to write to the directory, "sudo" will be used to escalate permissions.</p>
+		<pre>curl -sS http://silverstripe.github.io/sspak/install | php -- /usr/local/bin</pre>
 
-		<p>For example, this would also work:</p>
+		<p>If the final argument is omitted, the script will be installed into the current directory. If you don't have permission to write to the directory, "sudo" will be used to escalate permissions.</p>
 
-		<pre>$&gt; cd /usr/local/bin
-$&gt; curl -sS http://silverstripe.github.io/sspak/install | sudo php</pre>
+		<h3>Method 2: Direct download</h3>
 
+		<p>If you prefer not to use the installer, you can <a href="sspak.phar">download the script</a> and copy it to your executable path:</p>
 
-		<p>If you prefer not to use the installer, you can download the script and copy it to your executable path as follows:</p>
+		<pre>chmod +x sspak.phar
+sudo mv sspak.phar /usr/local/bin/sspak</pre>
 
-		<pre>$&gt; wget http://silverstripe.github.io/sspak/sspak.phar
-$&gt; chmod +x sspak.phar
-$&gt; sudo mv sspak.phar /usr/local/bin/sspak</pre>
+		<h2>Installation: Windows</h2>
 
-		<p><code>sspak.phar</code> is available for <a href="sspak.phar">download here</a>.</p>
+		We assume here the program will be installed to "c:\bin".
+		
+		<p>Open your terminal and double check your Path variable contains both your php directory and "c:\bin":</p>
+		<pre>echo %Path%</pre>
 
-		<h2>Documentation</h2>
-		<p>For more information, please <a href="http://github.com/silverstripe/sspak/">visit the GitHub page</a>.</p>
-		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-		<script>
-			$("pre.big").click(function() {
-				selectText($(this).find('.content')[0]);
-				$(this).find('.copy-instruction').show();
-			});
+		<p>Download sspak.phar to "c:\bin" and make it executable by creating a bat file:</p>
 
-			function selectText(text) {
-				var doc = document;
+		<pre>cd c:\bin
+php -r "readfile('http://silverstripe.github.io/sspak/sspak.phar');" %*&gt;sspak.phar
+echo @php "%~dp0sspak.phar" %*&gt;sspak.bat</pre>
 
-				if (doc.body.createTextRange) { // ms
-					var range = doc.body.createTextRange();
-					range.moveToElementText(text);
-					range.select();
-				} else if (window.getSelection) { // moz, opera, webkit
-					var selection = window.getSelection();            
-					var range = doc.createRange();
-					range.selectNodeContents(text);
-					selection.removeAllRanges();
-					selection.addRange(range);
-				}
-			}
+		<p>Note: You can also <a href="sspak.phar">download the sspak.phar</a> directly and move it to desired location by hand. You will still need to create the bat file.</p>
 
-		</script>
+		<h2>Usage</h2>
+
+		<p>You should now be able to display sspak help by simply calling:</p>
+		<pre>sspak</pre>
+
+		<p>For further information, please <a href="http://github.com/silverstripe/sspak/">visit the GitHub page</a>.</p>
 	</body>
 </html>
