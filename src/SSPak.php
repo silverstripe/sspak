@@ -21,37 +21,37 @@ class SSPak {
 				"method" => "help",
 			),
 			"save" => array(
-				"description" => "Save an .sspak.phar file from a site.",
+				"description" => "Save an .sspak file from a SilverStripe site.",
 				"unnamedArgs" => array("webroot", "sspak file"),
 				"method" => "save",
 			),
+			"load" => array(
+				"description" => "Load an .sspak file into a SilverStripe site. Does not backup - be careful!",
+				"unnamedArgs" => array("sspak file", "webroot"),
+				"method" => "load",
+			),
 			"saveexisting" => array(
-				"description" => "Save an .sspak.phar file given paths to existing database sql dump file and/or assets",
+				"description" => "Create an .sspak file from database SQL dump and/or assets. Does not require a SilverStripe site.",
 				"unnamedArgs" => array("sspak file"),
 				"namedArgs" => array("db", "assets"),
 				"method" => "saveexisting"
 			),
 			"extract" => array(
-				"description" => "Extract the contents of a sspak file into the current working directory",
+				"description" => "Extract an .sspak file into the current working directory. Does not require a SilverStripe site.",
 				"unnamedArgs" => array("sspak file", "destination path"),
 				"method" => "extract"
 			),
-			"load" => array(
-				"description" => "Load a .sspak.phar file into an environment. Does not backup - be careful!",
-				"unnamedArgs" => array("sspak file", "webroot"),
-				"method" => "load",
-			),
+			/*
 			"install" => array(
-				"description" => "Install a .sspak.phar file into a new environment.",
+				"description" => "Install a .sspak file into a new environment.",
 				"unnamedArgs" => array("sspak file", "new webroot"),
 				"method" => "install",
 			),
 			"bundle" => array(
-				"description" => "Bundle a .sspak.phar file into a self-extracting executable installer.",
+				"description" => "Bundle a .sspak file into a self-extracting executable .sspak.phar installer.",
 				"unnamedArgs" => array("sspak file", "executable"),
 				"method" => "bundle",
 			),
-			/*
 			"transfer" => array(
 				"description" => "Transfer db & assets from one site to another (not implemented yet).",
 				"unnamedArgs" => array("src webroot", "dest webroot"),
@@ -193,10 +193,23 @@ class SSPak {
 		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
 		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
 		$databaseArg = escapeshellarg($conf['db_database']);
-		$hostArg = (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') ? escapeshellarg("--host=".$conf['db_server']) : '';
+
+		$hostArg = '';
+		$postArg = '';
+		if (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') {
+			if (strpos($conf['db_server'], ':')!==false) {
+				// Handle "server:port" format.
+				$server = explode(':', $conf['db_server'], 2);
+				$hostArg = escapeshellarg("--host=".$server[0]);
+				$portArg = escapeshellarg("--port=".$server[1]);
+			} else {
+				$hostArg = escapeshellarg("--host=".$conf['db_server']);
+			}
+		}
+
 		$filenameArg = escapeshellarg($filename);
 
-		$process = $webroot->createProcess("mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick  --set-charset --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg | gzip -c");
+		$process = $webroot->createProcess("mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick  --set-charset --default-character-set=utf8 $usernameArg $passwordArg $hostArg $portArg $databaseArg | gzip -c");
 		$sspak->writeFileFromProcess($filename, $process);
 		return true;
 	}
@@ -227,7 +240,7 @@ class SSPak {
 		if($webroot->exists($gitRepo)) {
 			// Identify current branch
 			$output = $webroot->exec(array('git', '--git-dir='.$gitRepo, 'branch'));
-			if(preg_match("/\* ([^ \n]*)/", $output['output'], $matches)) {
+			if(preg_match("/\* ([^ \n]*)/", $output['output'], $matches) && strpos("(no branch)", $matches[1])===false) {
 				// If there is a current branch, use that branch's remove
 				$currentBranch = trim($matches[1]);
 				$output = $webroot->exec(array('git', '--git-dir='.$gitRepo, 'config','--get',"branch.$currentBranch.remote"));
@@ -314,6 +327,8 @@ class SSPak {
 			$webroot->putgit($details);
 		}
 
+		// TODO: composer install needed.
+
 		// Push database, if necessary
 		if($pakParts['db'] && $sspak->contains('database.sql.gz')) {
 			$webroot->putdb($sspak);
@@ -329,6 +344,8 @@ class SSPak {
 	 * Bundle a .sspak into a self-extracting executable installer.
 	 */
 	function bundle($args) {
+		// TODO: throws require_once errors, fix before re-enabling.
+
 		$executor = $this->executor;
 
 		$args->requireUnnamed(array('source sspak file', 'dest executable file'));

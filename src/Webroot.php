@@ -86,12 +86,24 @@ class Webroot extends FilesystemEntity {
 		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
 		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
 		$databaseArg = escapeshellarg($conf['db_database']);
-		$hostArg = (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') ? escapeshellarg("--host=".$conf['db_server']) : '';
 
-		$this->exec("echo 'create database if not exists `" . addslashes($conf['db_database']) . "`' | mysql $usernameArg $passwordArg $hostArg");
+		$hostArg = '';
+		$postArg = '';
+		if (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') {
+			if (strpos($conf['db_server'], ':')!==false) {
+				// Handle "server:port" format.
+				$server = explode(':', $conf['db_server'], 2);
+				$hostArg = escapeshellarg("--host=".$server[0]);
+				$portArg = escapeshellarg("--port=".$server[1]);
+			} else {
+				$hostArg = escapeshellarg("--host=".$conf['db_server']);
+			}
+		}
+
+		$this->exec("echo 'create database if not exists `" . addslashes($conf['db_database']) . "`' | mysql $usernameArg $passwordArg $hostArg $portArg");
 
 		$stream = $sspak->readStreamForFile('database.sql.gz');
-		$this->exec("gunzip -c | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $databaseArg", array('inputStream' => $stream));
+		$this->exec("gunzip -c | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $portArg $databaseArg", array('inputStream' => $stream));
 		fclose($stream);
 		return true;
 	}

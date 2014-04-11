@@ -44,7 +44,7 @@ class Args {
 	 * Return the unnamed arg of the given index (0 = first)
 	 */
 	function unnamed($idx) {
-		return $this->unnamedArgs[$idx];
+		return isset($this->unnamedArgs[$idx]) ? $this->unnamedArgs[$idx] : null;
 	}
 
 	/**
@@ -76,6 +76,7 @@ class Args {
 			echo "Usage: {$_SERVER['argv'][0]} " . $this->action . " (";
 			echo implode(") (", $items);
 			echo ")\n";
+			throw new Exception('Arguments missing.');
 		}
 	}
 }
