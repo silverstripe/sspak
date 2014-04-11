@@ -73,8 +73,25 @@ sudo mv sspak.phar /usr/local/bin/sspak</pre>
 
 		<h2>Installation: Windows</h2>
 
-		We assume here the program will be installed to "c:\bin".
+		<p>We assume here the program will be installed to "c:\bin" and that your path environment variable is set up to point to this directory.<p>
 		
+		<p>On Windows 8 the path can be set by: pressing Windows-SysRq, clicking
+		"Advanced system settings", then "Environment Variables...", then modifying the "Path" entry under "System variables". Refer to Google for instructions for your specific system.</p>
+		
+		<h3>Method 1: msysgit bash</h3>
+
+		<p>Open your git bash and double check your PATH variable contains both your php directory and "/c/bin":</p>
+		<pre>echo $PATH</pre>
+
+		<p>Download sspak.phar to "/C/bin" and make it executable:</p>
+		<pre>cd /C/bin
+php -r "readfile('http://silverstripe.github.io/sspak/sspak.phar');" &gt; sspak
+chmod a+x sspak</pre>
+
+		<p>Note: You can also <a href="sspak.phar">download the sspak.phar</a> directly and move it to desired location by hand. Don't forget to rename it to "sspak" and give it execution permission.
+
+		<h3>Method 2: cmd.exe</h3>
+
 		<p>Open your terminal and double check your Path variable contains both your php directory and "c:\bin":</p>
 		<pre>echo %Path%</pre>
 
