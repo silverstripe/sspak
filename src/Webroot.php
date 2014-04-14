@@ -88,7 +88,7 @@ class Webroot extends FilesystemEntity {
 		$databaseArg = escapeshellarg($conf['db_database']);
 
 		$hostArg = '';
-		$postArg = '';
+		$portArg = '';
 		if (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') {
 			if (strpos($conf['db_server'], ':')!==false) {
 				// Handle "server:port" format.
