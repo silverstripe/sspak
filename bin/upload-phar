@@ -1,0 +1,66 @@
+#!/usr/bin/env php
+<?php
+
+// Root from which to refer to src/
+if(!defined('PACKAGE_ROOT')) define('PACKAGE_ROOT', dirname(dirname(__FILE__)) . '/');
+
+require_once(PACKAGE_ROOT . 'src/FilesystemEntity.php');
+require_once(PACKAGE_ROOT . 'src/SSPakFile.php');
+
+if(empty($_SERVER['argv'][1])) {
+	$pharFile = dirname(dirname(__FILE__))."/build/sspak.phar";
+} else {
+	$pharFile = $_SERVER['argv'][1];
+}
+
+if(!file_exists(dirname($pharFile))) {
+	echo "Creating directory " . dirname($pharFile) . "...\n";
+	mkdir(dirname($pharFile));
+}
+
+echo "Building sspak executable $pharFile\n";
+
+if(file_exists($pharFile)) unlink($pharFile);
+$phar = new SSPakFile($pharFile, null, 'sspak-bin.phar');
+$phar->makeExecutable();
+
+if(empty($_SERVER['argv'][1])) {
+	chdir(PACKAGE_ROOT);
+
+	echo "Creating version file...\n";
+	$versionFile = dirname($pharFile) . '/version';
+	file_put_contents($versionFile, `git log -1 --oneline --pretty=%H`);
+
+	echo "Copying install file to build...\n";
+	copy(PACKAGE_ROOT . "bin/install", dirname($pharFile) . "/install");
+
+	echo "Checking out gh-pages...\n";
+	try {
+		shell_cmd("git checkout gh-pages");
+		shell_cmd("git pull");
+
+		echo "Committing sspak.phar and version into it...\n";
+		shell_cmd("cp build/sspak.phar .");
+		shell_cmd("cp build/version .");
+		shell_cmd("cp build/install .");
+		shell_cmd("git add sspak.phar version install");
+		shell_cmd("git commit -m 'Updating sspak.phar package'");
+
+		echo "Pushing to github server...\n";
+		shell_cmd("git push");
+		echo "Checking out master again...\n";
+		shell_cmd("git checkout master");
+	} catch(Exception $e) {
+		echo $e->getMessage() . "\n";
+		echo "Checking out master again...\n";
+		shell_cmd("git checkout -f master");
+	}
+}
+
+echo "Done.\n";
+
+function shell_cmd($cmd) {
+	$retVal = 0;
+	passthru($cmd, $retVal);
+	if($retVal != 0) throw new Exception("Error executing '$cmd', return value $retVal");
+}
