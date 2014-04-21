@@ -54,7 +54,7 @@
 		<h1>SSPak</h1>
 		<p>SSPak is a database and asset bundling tool for SilverStripe.</p>
 
-		<h2>Installation: Linux and OSX</h2>
+		<h2>Usage: Linux and OSX</h2>
 
 		<h3>Method 1: Install script</h3>
 	
@@ -71,8 +71,42 @@
 		<pre>chmod +x sspak.phar
 sudo mv sspak.phar /usr/local/bin/sspak</pre>
 
-		<h2>Installation: Windows</h2>
+		<h2>Usage: Windows</h2>
 
+		<p>Unfortunately sspak is not supported on Windows at this time. However it is possible to access and create sspak archives manually using freely available tools. "sspak" format relies on tar and gzip, so you will be able to work with it by either using <b>msysgit bash</b> and <b>Cygwin</b>, or by using GUI tools such as <b>7-zip</b>.</p>
+
+		<h3>Accessing existing archive</h3>
+
+		<p>Change the "sspak" extension of the archive to "tgz". This should make it possible to open it with <b>7-zip</b>. You will see it contains two further archives:
+		"database.sql.gz" and "assets.tar.gz". Unpack these, and you should be able to access them using the same tool.</p>
+
+		<p>If you wish to use one of the terminal emulators, you can do the following:</p>
+
+		<pre>tar xzf your-archive.sspak
+gunzip database.sql.gz
+tar xzf assets.tar.gz</pre>
+
+		<p>This will result in a "database.sql" dump and "assets" directory.</p>
+		
+		<h3>Creating a new archive</h3>
+
+		<p>If you wish to build an sspak archive for submission, you can do it by hand by creating the following structure:</p>
+		<ul>
+			<li>Tar and gzip the entire assets directory (including the "assets" directory itself) into "assets.tar.gz"</li>
+			<li>Dump the database into "database.sql" file, then gzip it to obtain "database.sql.gz"</li>
+			<li>Tar and gzip these two files into a file with "sspak" extension</li>
+			<li>This file is ready for submission</li>
+		</ul>
+
+		<p>If you are using one of the terminal emulators, you can achieve this as follows:</p>
+
+		<pre>tar czf assets.tar.gz assets
+gzip database.sql
+tar czf your-archive.sspak assets.tar.gz database.sql.gz</pre>
+
+		<p>"your-archive.sspak" is now ready for submission.</p>
+
+		<!--
 		<p>We assume here the program will be installed to "c:\bin" and that your path environment variable is set up to point to this directory.<p>
 		
 		<p>On Windows 8 the path can be set by: pressing Windows-SysRq, clicking
@@ -107,6 +141,10 @@ echo @php "%~dp0sspak.phar" %*&gt;sspak.bat</pre>
 
 		<p>You should now be able to display sspak help by simply calling:</p>
 		<pre>sspak</pre>
+
+		-->
+
+		<h2>Further information</h2>
 
 		<p>For further information, please <a href="http://github.com/silverstripe/sspak/">visit the GitHub page</a>.</p>
 	</body>
