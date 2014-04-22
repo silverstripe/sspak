@@ -21,7 +21,7 @@
 			margin: 24px 0 24px 0;
 			padding: 0;
 		}
-		p {
+		p, li {
 			font-size: 16px;
 			line-height: 24px;
 		}
@@ -54,9 +54,9 @@
 		<h1>SSPak</h1>
 		<p>SSPak is a database and asset bundling tool for SilverStripe.</p>
 
-		<h2>Usage: Linux and OSX</h2>
+		<h2>Linux and OSX</h2>
 
-		<h3>Method 1: Install script</h3>
+		<h3>Installation method 1: Script</h3>
 	
 		<p>Use the install script, where the final argument is the directory where the binary will be installed to.</p>
 
@@ -64,12 +64,14 @@
 
 		<p>If the final argument is omitted, the script will be installed into the current directory. If you don't have permission to write to the directory, "sudo" will be used to escalate permissions.</p>
 
-		<h3>Method 2: Direct download</h3>
+		<h3>Installation method 2: Direct download</h3>
 
 		<p>If you prefer not to use the installer, you can <a href="sspak.phar">download the script</a> and copy it to your executable path:</p>
 
 		<pre>chmod +x sspak.phar
 sudo mv sspak.phar /usr/local/bin/sspak</pre>
+
+		<h3>Usage</h3>
 
 		<p>You should now be able to invoke sspak and see the help message:</p>
 
@@ -77,40 +79,21 @@ sudo mv sspak.phar /usr/local/bin/sspak</pre>
 SSPak: manage SilverStripe .sspak archives.
 ...</pre>
 
-		<h2>Usage: Windows</h2>
+		<p>To load an sspak onto your environment (watch out, assets and db will be wiped out!):</p>
 
-		<p>Unfortunately sspak is not supported on Windows at this time. However it is possible to access and create sspak archives manually using freely available tools. "sspak" format relies on tar and gzip, so you will be able to work with it by either using <b>msysgit bash</b> and <b>Cygwin</b>, or by using GUI tools such as <b>7-zip</b>.</p>
+		<pre>sspak load /path/to/downloaded/file.sspak /path/to/my/local/site</pre>
 
-		<h3>Accessing existing archive</h3>
+		<p>To create a new sspak:</p>
 
-		<p>Change the "sspak" extension of the archive to "tgz". This should make it possible to open it with <b>7-zip</b>. You will see it contains two further archives:
-		"database.sql.gz" and "assets.tar.gz". Unpack these, and you should be able to access them using the same tool.</p>
+		<pre>sspak save /path/to/my/local/site /path/to/resulting/file.sspak</pre>
 
-		<p>If you wish to use one of the terminal emulators, you can do the following:</p>
+		<p>That should do the trick, assuming your SilverStripe installation is working correctly. If it doesn't, have a look at "saveexisting" and "extract" commands instead.</p>
 
-		<pre>tar xzf your-archive.sspak
-gunzip database.sql.gz
-tar xzf assets.tar.gz</pre>
+		<h2>Windows</h2>
 
-		<p>This will result in a "database.sql" dump and "assets" directory.</p>
-		
-		<h3>Creating a new archive</h3>
+		<p>Unfortunately sspak is not supported on Windows at this time. However it is possible to access and create sspak archives manually using freely available tools. You will be able to work with it by either using <b>msysgit bash</b> and <b>Cygwin</b>, or by using GUI tools such as <b>7-zip</b>.</p>
 
-		<p>If you wish to build an sspak archive for submission, you can do it by hand by creating the following structure:</p>
-		<ul>
-			<li>Tar and gzip the entire assets directory (including the "assets" directory itself) into "assets.tar.gz"</li>
-			<li>Dump the database into "database.sql" file, then gzip it to obtain "database.sql.gz"</li>
-			<li>Tar and gzip these two files into a file with "sspak" extension</li>
-			<li>This file is ready for submission</li>
-		</ul>
-
-		<p>If you are using one of the terminal emulators, you can achieve this as follows:</p>
-
-		<pre>tar czf assets.tar.gz assets
-gzip database.sql
-tar czf your-archive.sspak assets.tar.gz database.sql.gz</pre>
-
-		<p>"your-archive.sspak" is now ready for submission.</p>
+		<p>See "Manual access" below for further details.</p>
 
 		<!--
 		<p>We assume here the program will be installed to "c:\bin" and that your path environment variable is set up to point to this directory.<p>
@@ -149,6 +132,41 @@ echo @php "%~dp0sspak.phar" %*&gt;sspak.bat</pre>
 		<pre>sspak</pre>
 
 		-->
+
+		<h2>Manual access</h2>
+
+		"sspak" format relies on tar and gzip, so it's possible to access and create archives by hand.
+
+		<h3>"sspak" structure</h3>
+
+		<ul>
+			<li>"your-archive.sspak", can be unpacked using tar and gz ("tgz" / "tar.gz" equivalent). It contains:
+				<ul>
+					<li>"assets.tar.gz", contains tar+gzipped "assets" directory (including the "assets" directory)</li>
+					<li>"database.sql.gz", contains gzipped SQL dump of the database</li>
+				</ul>
+			</li>
+		</ul>
+
+		<h3>Accessing existing archive</h3>
+
+		<p>In the terminal (or terminal emulator) do the following:</p>
+
+		<pre>tar xzf your-archive.sspak
+gunzip database.sql.gz
+tar xzf assets.tar.gz</pre>
+
+		<p>This will result in a "database.sql" dump and "assets" directory.</p>
+
+		<h3>Creating a new archive</h3>
+
+		<p>In the terminal (or terminal emulator) do the following:</p>
+
+		<pre>tar czf assets.tar.gz assets
+gzip database.sql
+tar czf your-archive.sspak assets.tar.gz database.sql.gz</pre>
+
+		<p>"your-archive.sspak" is now ready for submission.</p>
 
 		<h2>Further information</h2>
 
