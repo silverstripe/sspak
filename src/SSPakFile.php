@@ -4,12 +4,14 @@ class SSPakFile extends FilesystemEntity {
 
 	protected $phar;
 	protected $pharAlias;
+	protected $pharPath;
 
 	function __construct($path, $executor, $pharAlias = 'sspak.phar') {
 		parent::__construct($path, $executor);
 		if(!$this->isLocal()) throw new LogicException("Can't manipulate remote .sspak.phar files, only remote webroots.");
 
 		$this->pharAlias = $pharAlias;
+		$this->pharPath = $path;
 		
 		// Executable Phar version
 		if(substr($path,-5) === '.phar') {
@@ -115,7 +117,9 @@ STUB;
 	 * @return Stream context
 	 */
 	function readStreamForFile($filename) {
-		return fopen('phar://' . $this->pharAlias . '/' . $filename, 'r');
+		// Note: using pharAlias here doesn't work on Debian Wheezy (nor on Windows for that matter).
+		//return fopen('phar://' . $this->pharAlias . '/' . $filename, 'r');
+		return fopen('phar://' . $this->pharPath . '/' . $filename, 'r');
 	}
 
 	/**
