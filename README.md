@@ -78,6 +78,10 @@ Load an sspak file into a local instance:
 
     $> sspak load prod-site.sspak ~/Sites/devsite
 
+Load an sspak file into a local instance, dropping the existing DB first (mysql only):
+
+    $> sspak load prod-site.sspak ~/Sites/devsite --drop-db
+
 Transfer in one step: *(not implemented yet)*
 
     $> sspak transfer me@prodserver:/var/www ~/Sites/devsite
