@@ -67,9 +67,10 @@ class Webroot extends FilesystemEntity {
 	/**
 	 * Put the database from the given sspak file into this webroot.
 	 * @param array $details The previously sniffed details of this webroot
+	 * @param bool $dropdb Drop the DB prior to install
 	 * @param string $sspakFile Filename
 	 */
-	function putdb($sspak) {
+	function putdb($sspak, $dropdb) {
 		$details = $this->details();
 
 		// Check the database type
@@ -79,10 +80,10 @@ class Webroot extends FilesystemEntity {
 		}
 
 		// Extract DB direct from sspak file
-		return $this->$dbFunction($details, $sspak);
+		return $this->$dbFunction($details, $sspak, $dropdb);
 	}
 
-	function putdb_MySQLDatabase($conf, $sspak) {
+	function putdb_MySQLDatabase($conf, $sspak, $dropdb) {
 		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
 		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
 		$databaseArg = escapeshellarg($conf['db_database']);
@@ -99,8 +100,12 @@ class Webroot extends FilesystemEntity {
 				$hostArg = escapeshellarg("--host=".$conf['db_server']);
 			}
 		}
+		$dbCommand = "create database if not exists `" . addslashes($conf['db_database']) . "`";
+		if($dropdb) {
+			$dbCommand = "drop database if exists `" . addslashes($conf['db_database']) . "`; " . $dbCommand;
+		}
 
-		$this->exec("echo 'create database if not exists `" . addslashes($conf['db_database']) . "`' | mysql $usernameArg $passwordArg $hostArg $portArg");
+		$this->exec("echo '$dbCommand' | mysql $usernameArg $passwordArg $hostArg $portArg");
 
 		$stream = $sspak->readStreamForFile('database.sql.gz');
 		$this->exec("gunzip -c | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $portArg $databaseArg", array('inputStream' => $stream));
@@ -108,7 +113,8 @@ class Webroot extends FilesystemEntity {
 		return true;
 	}
 
-	function putdb_PostgreSQLDatabase($conf, $sspak) {
+	function putdb_PostgreSQLDatabase($conf, $sspak, $dropdb) {
+		// TODO: Support dropdb for postgresql
 		$usernameArg = escapeshellarg("--username=".$conf['db_username']);
 		$passwordArg = "PGPASSWORD=".escapeshellarg($conf['db_password']);
 		$databaseArg = escapeshellarg($conf['db_database']);

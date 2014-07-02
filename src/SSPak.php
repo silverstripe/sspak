@@ -28,6 +28,7 @@ class SSPak {
 			"load" => array(
 				"description" => "Load an .sspak file into a SilverStripe site. Does not backup - be careful!",
 				"unnamedArgs" => array("sspak file", "webroot"),
+				"namedFlags" => array("drop-db"),
 				"method" => "load",
 			),
 			"saveexisting" => array(
@@ -67,6 +68,9 @@ class SSPak {
 			echo "sspak $action";
 			if(!empty($info['unnamedArgs'])) {
 				foreach($info['unnamedArgs'] as $arg) echo " ($arg)";
+			}
+			if(!empty($info['namedFlags'])) {
+				foreach($info['namedFlags'] as $arg) echo " (--$arg)";
 			}
 			if(!empty($info['namedArgs'])) {
 				foreach($info['namedArgs'] as $arg) echo " --$arg=\"$arg value\"";
@@ -289,8 +293,9 @@ class SSPak {
 		if(!$sspak->exists()) throw new Exception( "File '$file' doesn't exist.");
 
 		// Push database, if necessary
+		$namedArgs = $args->getNamedArgs();
 		if($pakParts['db'] && $sspak->contains('database.sql.gz')) {
-			$webroot->putdb($sspak);
+			$webroot->putdb($sspak, isset($namedArgs['drop-db']));
 		}
 
 		// Push assets, if neccessary
@@ -328,10 +333,11 @@ class SSPak {
 		}
 
 		// TODO: composer install needed.
-
+		
 		// Push database, if necessary
+		$namedArgs = $args->getNamedArgs();
 		if($pakParts['db'] && $sspak->contains('database.sql.gz')) {
-			$webroot->putdb($sspak);
+			$webroot->putdb($sspak, isset($namedArgs['drop-db']));
 		}
 
 		// Push assets, if neccessary
