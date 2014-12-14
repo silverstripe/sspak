@@ -24,18 +24,18 @@ Installation
 
 You can run the installation script one of two ways.  If you have CURL, run this command (everything except for the `$>` part):
 
-    $> curl -sS http://silverstripe.github.io/sspak/install | php -- /usr/local/bin
+    $> curl -sS https://silverstripe.github.io/sspak/install | php -- /usr/local/bin
 
 The final argument is the directory that the script will be loaded into.  If omitted, the script will be installed into the current directory.  If you don't have permission to write to the directory, "sudo" will be used to escalate permissions.
 
 For example, this would also work:
 
     $> cd /usr/local/bin
-    $> curl -sS http://silverstripe.github.io/sspak/install | sudo php
+    $> curl -sS https://silverstripe.github.io/sspak/install | sudo php
 
 If you prefer not to use the installer, you can download the script and copy it to your executable path as follows:
 
-    $> wget http://silverstripe.github.io/sspak/sspak.phar
+    $> wget https://silverstripe.github.io/sspak/sspak.phar
     $> chmod +x sspak.phar
     $> sudo mv sspak.phar /usr/local/bin/sspak
 
