@@ -27,7 +27,7 @@ class SSPak {
 			),
 			"load" => array(
 				"description" => "Load an .sspak file into a SilverStripe site. Does not backup - be careful!",
-				"unnamedArgs" => array("sspak file", "webroot"),
+				"unnamedArgs" => array("sspak file", "[webroot]"),
 				"namedFlags" => array("drop-db"),
 				"method" => "load",
 			),
@@ -280,12 +280,12 @@ class SSPak {
 	function load($args) {
 		$executor = $this->executor;
 
-		$args->requireUnnamed(array('source sspak file', 'dest webroot'));
+		$args->requireUnnamed(array('source sspak file'));
 
 		// Set-up
 		$file = $args->unnamed(0);
 		$sspak = new SSPakFile($file, $executor);
-		$webroot = new Webroot($args->unnamed(1), $executor);
+		$webroot = new Webroot(($args->unnamed(1) ?: '.'), $executor);
 		$webroot->setSudo($args->sudo('to'));
 		$pakParts = $args->pakParts();
 
