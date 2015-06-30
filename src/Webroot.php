@@ -32,7 +32,7 @@ class Webroot extends FilesystemEntity {
 		$this->uploadContent($snifferFileContent, $remoteSniffer);
 
 		$result = $this->execSudo(array('/usr/bin/env', 'php', $remoteSniffer, $this->path));
-		//$this->unlink($remoteSniffer);
+		$this->unlink($remoteSniffer);
 
 		$parsed = @unserialize($result['output']);
 		if(!$parsed) throw new Exception("Could not parse sspak-sniffer content:\n{$result['output']}\n");
