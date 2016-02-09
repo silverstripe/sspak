@@ -108,7 +108,7 @@ class Webroot extends FilesystemEntity {
 		$this->exec("echo '$dbCommand' | mysql $usernameArg $passwordArg $hostArg $portArg");
 
 		$stream = $sspak->readStreamForFile('database.sql.gz');
-		$this->exec("gunzip -c | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $portArg $databaseArg", array('inputStream' => $stream));
+		$this->exec("gunzip -c | sed '/^CREATE DATABASE/d;/^USE/d' | mysql --default-character-set=utf8 $usernameArg $passwordArg $hostArg $portArg $databaseArg", array('inputStream' => $stream));
 		fclose($stream);
 		return true;
 	}
