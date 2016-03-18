@@ -193,6 +193,10 @@ class SSPak {
 		$webroot->unlink($buildFolder);
 	}
 
+	function getdb_MySQLPDODatabase($webroot, $conf, $sspak, $filename) {
+		return $this->getdb_MySQLDatabase($webroot, $conf, $sspak, $filename);
+	}
+
 	function getdb_MySQLDatabase($webroot, $conf, $sspak, $filename) {
 		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
 		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
