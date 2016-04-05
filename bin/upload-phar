@@ -1,6 +1,8 @@
 #!/usr/bin/env php
 <?php
 
+$exitCode = 0;
+
 // Root from which to refer to src/
 if(!defined('PACKAGE_ROOT')) define('PACKAGE_ROOT', dirname(dirname(__FILE__)) . '/');
 
@@ -51,6 +53,7 @@ if(empty($_SERVER['argv'][1])) {
 		echo "Checking out master again...\n";
 		shell_cmd("git checkout master");
 	} catch(Exception $e) {
+		$exitCode = 1;
 		echo $e->getMessage() . "\n";
 		echo "Checking out master again...\n";
 		shell_cmd("git checkout -f master");
@@ -58,6 +61,8 @@ if(empty($_SERVER['argv'][1])) {
 }
 
 echo "Done.\n";
+
+exit($exitCode);
 
 function shell_cmd($cmd) {
 	$retVal = 0;
