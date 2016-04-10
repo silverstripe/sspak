@@ -83,6 +83,10 @@ class Webroot extends FilesystemEntity {
 		return $this->$dbFunction($details, $sspak, $dropdb);
 	}
 
+	function putdb_MySQLPDODatabase($conf, $sspak, $dropdb) {
+		return $this->putdb_MySQLDatabase($conf, $sspak, $dropdb);
+	}
+
 	function putdb_MySQLDatabase($conf, $sspak, $dropdb) {
 		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
 		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
