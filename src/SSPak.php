@@ -23,11 +23,13 @@ class SSPak {
 			"save" => array(
 				"description" => "Save an .sspak file from a SilverStripe site.",
 				"unnamedArgs" => array("webroot", "sspak file"),
+				"namedArgs" => array("identity"),
 				"method" => "save",
 			),
 			"load" => array(
 				"description" => "Load an .sspak file into a SilverStripe site. Does not backup - be careful!",
 				"unnamedArgs" => array("sspak file", "[webroot]"),
+				"namedArgs" => array("identity"),
 				"namedFlags" => array("drop-db"),
 				"method" => "load",
 			),
@@ -149,6 +151,10 @@ class SSPak {
 
 		$sspak = new SSPakFile($file, $executor);
 
+		if(!empty($namedArgs['identity'])) {
+			// SSH private key
+			$webroot->setSSHItentityFile($namedArgs['identity']);
+		}
 		if(!empty($namedArgs['from-sudo'])) $webroot->setSudo($namedArgs['from-sudo']);
 		else if(!empty($namedArgs['sudo'])) $webroot->setSudo($namedArgs['sudo']);
 
@@ -258,7 +264,7 @@ class SSPak {
 			// Default to origin
 			} else {
 				$currentBranch = null;
-				$remoteName = 'origin';	
+				$remoteName = 'origin';
 			}
 
 			// Determine the URL of that remote
@@ -280,7 +286,7 @@ class SSPak {
 
 	/**
 	 * Load an .sspak into an environment.
-	 * Does not backup - be careful! */	
+	 * Does not backup - be careful! */
 	function load($args) {
 		$executor = $this->executor;
 
@@ -292,6 +298,12 @@ class SSPak {
 		$webroot = new Webroot(($args->unnamed(1) ?: '.'), $executor);
 		$webroot->setSudo($args->sudo('to'));
 		$pakParts = $args->pakParts();
+
+		$namedArgs = $args->getNamedArgs();
+		if(!empty($namedArgs['identity'])) {
+			// SSH private key
+			$webroot->setSSHItentityFile($namedArgs['identity']);
+		}
 
 		// Validation
 		if(!$sspak->exists()) throw new Exception( "File '$file' doesn't exist.");
@@ -337,7 +349,7 @@ class SSPak {
 		}
 
 		// TODO: composer install needed.
-		
+
 		// Push database, if necessary
 		$namedArgs = $args->getNamedArgs();
 		if($pakParts['db'] && $sspak->contains('database.sql.gz')) {
@@ -374,7 +386,7 @@ class SSPak {
 		// Load the sniffer file
 		$snifferFile = dirname(__FILE__) . '/sspak-sniffer.php';
 		$sspakScript = str_replace("\$snifferFileContent = '';\n",
-			"\$snifferFileContent = '" 
+			"\$snifferFileContent = '"
 			. str_replace(array("\\","'"),array("\\\\", "\\'"), file_get_contents($snifferFile)) . "';\n", $sspakScript);
 
 		file_put_contents($destFile, $sspakScript);

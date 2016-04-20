@@ -83,6 +83,9 @@ class Process {
 		if($this->remoteServer) {
 			if(!empty($options['outputFile']) || !empty($options['outputStream'])) $ssh = "ssh -T ";
 			else $ssh = "ssh -t ";
+			if (!empty($options['identity'])) {
+				$ssh .= '-i ' . escapeshellarg($options['identity']) . ' ';
+			}
 			$command = $ssh . escapeshellarg($this->remoteServer) . ' ' . escapeshellarg($this->command);
 		} else {
 			$command = $this->command;
@@ -97,10 +100,10 @@ class Process {
 
 		// Alternatives
 		if($options['inputContent'] || $options['inputStream']) $pipeSpec[0] = array('pipe', 'r');
-		
+
 		if($options['outputFile']) {
 			$pipeSpec[1] = array('file',
-				$options['outputFile'], 
+				$options['outputFile'],
 				$options['outputFileAppend'] ? 'a' : 'w');
 		}
 
@@ -115,7 +118,7 @@ class Process {
 			}
 		}
 		if(isset($pipes[0])) fclose($pipes[0]);
-	
+
 		$result = array();
 
 		if(isset($pipes[1])) {

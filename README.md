@@ -62,17 +62,21 @@ Create an sspak file based on a remote site:
 
     $> sspak save me@prodserver:/var/www prod-site.sspak
 
+Create an sspak file based on a remote site using a specific private key to connect:
+
+    $> sspak save --identity=prodserver.key me@prodserver:/var/www prod-site.sspak
+
 Create an executable sspak file by adding a phar extension:
 
     $> sspak save me@prodserver:/var/www prod-site.sspak.phar
 
 Create an sspak from existing files:
 
-	$> sspak saveexisting --db=/path/to/database.sql --assets=/path/to/assets
+    $> sspak saveexisting --db=/path/to/database.sql --assets=/path/to/assets
 
 Extract files from an existing sspak into the specified directory:
 
-	$> sspak extract /tmp/site.sspak /destination/path
+    $> sspak extract /tmp/site.sspak /destination/path
 
 Load an sspak file into a local instance:
 
@@ -81,6 +85,10 @@ Load an sspak file into a local instance:
 Load an sspak file into a local instance, dropping the existing DB first (mysql only):
 
     $> sspak load prod-site.sspak ~/Sites/devsite --drop-db
+
+Load an sspak file into a remote instance using a specific private key to connect:
+
+    $> sspak save --identity=backupserver.key prod-site.sspak me@backupserver:/var/www
 
 Transfer in one step: *(not implemented yet)*
 
@@ -92,7 +100,7 @@ Sudo as www-data to perform the actions
     $> sspak load --sudo=www1 prod-site.sspak ~/Sites/devsite
     $> sspak transfer --from-sudo=www-data --to-sudo=www1 me@prodserver:/var/www ~/Sites/devsite
 
-Save only the database: 
+Save only the database:
 
     $> sspak save --db me@prodserver:/var/www dev.sspak
 
