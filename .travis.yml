@@ -1,0 +1,20 @@
+sudo: false
+language: php
+php:
+  - '5.6'
+
+env:
+  global:
+      secure: "fQhSvmkxT2mrzIL9tfY54KVRIXWrMZo1bjOx4mfNOrKyrkG3GnIUndSmTAZQU/NTiXDIH+N8aIEP3VpDEfDv4XxI3A+5CAayJKTGuLDcyXy0vVf54BfzebG38oH93v2VE2YTeoG/L+Nb6A4+/hb+/sG2vWol+IKD1av/HxZdZZo="
+
+before_script:
+  - git config user.email "community@silverstripe.org"
+  - git config user.name "SilverStripe"
+  - git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
+  - git config push.default simple
+  - git fetch --unshallow
+  - git remote set-url origin "https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}"
+  - git checkout -qf "${TRAVIS_COMMIT}"
+
+script:
+  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && bin/upload-phar  > /dev/null 2>&1 || false'
