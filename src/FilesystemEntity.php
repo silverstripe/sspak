@@ -7,6 +7,7 @@ class FilesystemEntity {
 	protected $server;
 	protected $path;
 	protected $executor;
+	protected $identity = null;
 
 	function __construct($path, $executor) {
 		$this->executor = $executor;
@@ -28,16 +29,16 @@ class FilesystemEntity {
 	function getServer() {
 		return $this->server;
 	}
+	function setSSHItentityFile($filename) {
+		$this->identity = $filename;
+	}
 
 	/**
 	 * Execute a command on the relevant server
 	 * @param  string $command Shell command, either a fully escaped string or an array
 	 */
 	function exec($command, $options = array()) {
-		if($this->server) $process = $this->executor->createRemote($this->server, $command, $options);
-		else $process = $this->executor->createLocal($command, $options);
-
-		return $process->exec();
+		return $this->createProcess($command, $options)->exec();
 	}
 
 	/**
@@ -46,8 +47,14 @@ class FilesystemEntity {
 	 * @return Process
 	 */
 	function createProcess($command, $options = array()) {
-		if($this->server) return $this->executor->createRemote($this->server, $command, $options);
-		else return $this->executor->createLocal($command, $options);
+		if($this->server) {
+			if ($this->identity && !isset($options['identity'])) {
+				$options['identity'] = $this->identity;
+			}
+			return $this->executor->createRemote($this->server, $command, $options);
+		}
+
+		return $this->executor->createLocal($command, $options);
 	}
 
 	/**
@@ -117,7 +124,7 @@ class FilesystemEntity {
 
 	/**
 	 * Remove a file or folder from the webroot's server
-	 * 
+	 *
 	 * @param string $file The file to remove
 	 */
 	function unlink($file) {
