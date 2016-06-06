@@ -10,11 +10,11 @@ env:
 before_script:
   - git config user.email "community@silverstripe.org"
   - git config user.name "SilverStripe"
-  - git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
-  - git config push.default simple
-  - git fetch --unshallow
-  - git remote set-url origin "https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}"
-  - git checkout -qf "${TRAVIS_COMMIT}"
+  - [ "${TRAVIS_PULL_REQUEST}" = "false" ] && git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
+  - [ "${TRAVIS_PULL_REQUEST}" = "false" ] && git config push.default simple
+  - [ "${TRAVIS_PULL_REQUEST}" = "false" ] && git fetch --unshallow
+  - [ "${TRAVIS_PULL_REQUEST}" = "false" ] && git remote set-url origin "https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}"
+  - [ "${TRAVIS_PULL_REQUEST}" = "false" ] && git checkout -qf "${TRAVIS_COMMIT}"
 
 script:
   - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && bin/upload-phar  > /dev/null 2>&1 || false'
