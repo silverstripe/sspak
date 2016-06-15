@@ -10,11 +10,18 @@ env:
 before_script:
   - git config user.email "community@silverstripe.org"
   - git config user.name "SilverStripe"
-  - '[ "${TRAVIS_PULL_REQUEST}" = "false" -a "${TRAVIS_BRANCH}" = "master" ] && git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*;'
-  - '[ "${TRAVIS_PULL_REQUEST}" = "false" -a "${TRAVIS_BRANCH}" = "master" ] && git config push.default simple'
-  - '[ "${TRAVIS_PULL_REQUEST}" = "false" -a "${TRAVIS_BRANCH}" = "master" ] && git fetch --unshallow'
-  - '[ "${TRAVIS_PULL_REQUEST}" = "false" -a "${TRAVIS_BRANCH}" = "master" ] && git remote set-url origin "https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}"'
-  - '[ "${TRAVIS_PULL_REQUEST}" = "false" -a "${TRAVIS_BRANCH}" = "master" ] && git checkout -qf "${TRAVIS_COMMIT}"'
+  # This inverted conditional format ensures that PRs/non-master branches don't report a failure
+  - '[ "${TRAVIS_PULL_REQUEST}" != "false" -o "${TRAVIS_BRANCH}" != "master" ] || git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*'
+  - '[ "${TRAVIS_PULL_REQUEST}" != "false" -o "${TRAVIS_BRANCH}" != "master" ] || git config push.default simple'
+  - '[ "${TRAVIS_PULL_REQUEST}" != "false" -o "${TRAVIS_BRANCH}" != "master" ] || git fetch --unshallow'
+  - '[ "${TRAVIS_PULL_REQUEST}" != "false" -o "${TRAVIS_BRANCH}" != "master" ] || git remote set-url origin "https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}"'
+  - '[ "${TRAVIS_PULL_REQUEST}" != "false" -o "${TRAVIS_BRANCH}" != "master" ] || git checkout -qf "${TRAVIS_COMMIT}"'
 
 script:
-  - '[ "${TRAVIS_PULL_REQUEST}" = "false" -a "${TRAVIS_BRANCH}" = "master" ] && bin/upload-phar > /dev/null 2>&1 || false'
+  - composer selfupdate || true
+  - composer install --dev --no-progress --no-interaction
+  - bin/build-phar
+  - vendor/bin/phpunit tests
+
+after_success:
+  - '[ "${TRAVIS_PULL_REQUEST}" != "false" -o "${TRAVIS_BRANCH}" != "master" ] || bin/upload-phar > /dev/null 2>&1'
