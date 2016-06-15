@@ -1,6 +1,9 @@
 SSPak
 =====
 
+[![Build Status](http://img.shields.io/travis/silverstripe/sspak.svg?style=flat-square)](https://travis-ci.org/silverstripe/sspak)
+[![Code Quality](http://img.shields.io/scrutinizer/g/silverstripe/sspak.svg?style=flat-square)](https://scrutinizer-ci.com/g/silverstripe/sspak)
+
 SSPak is a SilverStripe tool for managing database and assets content, for back-up, restoration, or transfer between
 environments.
 
