@@ -1,5 +1,9 @@
 <?php
 
+use SilverStripe\SsPak\DataExtractor\DatabaseConnector;
+use SilverStripe\SsPak\DataExtractor\CsvTableWriter;
+use SilverStripe\SsPak\DataExtractor\CsvTableReader;
+
 /**
  * SSPak handler
  */
@@ -44,7 +48,25 @@ class SSPak {
 				"unnamedArgs" => array("sspak file", "destination path"),
 				"method" => "extract"
 			),
+			"listtables" => array(
+				"description" => "List tables in the database",
+				"unnamedArgs" => array("webroot"),
+				"method" => "listTables"
+			),
+
+			"savecsv" => array(
+				"description" => "Save tables in the database to a collection of CSV files",
+				"unnamedArgs" => array("webroot", "output-path"),
+				"method" => "saveCsv"
+			),
+
+			"loadcsv" => array(
+				"description" => "Load tables from collection of CSV files to a webroot",
+				"unnamedArgs" => array("input-path", "webroot"),
+				"method" => "loadCsv"
+			),
 			/*
+
 			"install" => array(
 				"description" => "Install a .sspak file into a new environment.",
 				"unnamedArgs" => array("sspak file", "new webroot"),
@@ -134,6 +156,66 @@ class SSPak {
 		$phar->extractTo($dest);
 	}
 
+	function listTables($args) {
+		$args->requireUnnamed(array('webroot'));
+		$unnamedArgs = $args->getUnnamedArgs();
+		$webroot = $unnamedArgs[0];
+
+		$db = new DatabaseConnector($webroot);
+
+		print_r($db->getTables());
+	}
+
+	function saveCsv($args) {
+		$args->requireUnnamed(array('webroot', 'path'));
+		$unnamedArgs = $args->getUnnamedArgs();
+		$webroot = $unnamedArgs[0];
+		$destPath = $unnamedArgs[1];
+
+		if (!file_exists($destPath)) {
+			mkdir($destPath) || die("Can't create $destPath");
+		}
+		if (!is_dir($destPath)) {
+			die("$destPath isn't a directory");
+		}
+
+		$db = new DatabaseConnector($webroot);
+
+		foreach($db->getTables() as $table) {
+			$filename = $destPath . '/' . $table . '.csv';
+			echo $filename . "...\n";
+			touch($filename);
+			$writer = new CsvTableWriter($filename);
+			$db->saveTable($table, $writer);
+		}
+		echo "Done!";
+	}
+
+	function loadCsv($args) {
+		$args->requireUnnamed(array('input-path', 'webroot'));
+		$unnamedArgs = $args->getUnnamedArgs();
+
+		$srcPath = $unnamedArgs[0];
+		$webroot = $unnamedArgs[1];
+
+		if (!is_dir($srcPath)) {
+			die("$srcPath isn't a directory");
+		}
+
+		$db = new DatabaseConnector($webroot);
+
+		foreach($db->getTables() as $table) {
+			$filename = $srcPath . '/' . $table . '.csv';
+			if(file_exists($filename)) {
+				echo $filename . "...\n";
+				$reader = new CsvTableReader($filename);
+				$db->loadTable($table, $reader);
+			} else {
+				echo "$filename doesn't exist; skipping.\n";
+			}
+		}
+		echo "Done!";
+	}
 	/**
 	 * Save a .sspak.phar file
 	 */

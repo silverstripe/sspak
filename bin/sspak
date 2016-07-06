@@ -11,6 +11,8 @@ require_once(PACKAGE_ROOT . 'src/FilesystemEntity.php');
 require_once(PACKAGE_ROOT . 'src/SSPakFile.php');
 require_once(PACKAGE_ROOT . 'src/Webroot.php');
 
+require_once(PACKAGE_ROOT . 'vendor/autoload.php');
+
 $argObj = new Args($_SERVER['argv']);
 /*
 // Special case for self-extracting sspaks

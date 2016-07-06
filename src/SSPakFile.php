@@ -12,7 +12,7 @@ class SSPakFile extends FilesystemEntity {
 
 		$this->pharAlias = $pharAlias;
 		$this->pharPath = $path;
-		
+
 		// Executable Phar version
 		if(substr($path,-5) === '.phar') {
 			$this->phar = new Phar($path, FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::KEY_AS_FILENAME,
@@ -38,15 +38,28 @@ class SSPakFile extends FilesystemEntity {
 			throw new Exception("Please set phar.readonly to false in your php.ini.");
 		}
 
+		passthru("composer install -d " . escapeshellarg(PACKAGE_ROOT) . " --no-dev");
+
 		$root = PACKAGE_ROOT;
-		$srcRoot = PACKAGE_ROOT . 'src/';
+		$srcRoots = [
+			'src/',
+			'vendor/',
+		];
 
 		// Add the bin file, but strip of the #! exec header.
 		$this->phar['bin/sspak'] = preg_replace("/^#!\/usr\/bin\/env php\n/", '', file_get_contents($root . "bin/sspak"));
 
-		foreach(scandir($srcRoot) as $file) {
-			if($file[0] == '.') continue;
-			$this->phar['src/'.$file] = file_get_contents($srcRoot . $file);
+		foreach($srcRoots as $srcRoot) {
+			foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . $srcRoot)) as $fileObj) {
+				if($fileObj->isFile()) {
+					$file = $fileObj->getRealPath();
+
+					$relativeFile = str_replace($root, '', $file);
+
+					echo "Adding $relativeFile\n";
+					$this->phar[$relativeFile] = file_get_contents($file);
+				}
+			}
 		}
 
 		$stub = <<<STUB
@@ -60,6 +73,8 @@ STUB;
 
 		$this->phar->setStub($stub);
 		chmod($this->path, 0775);
+
+		passthru("composer install -d " . escapeshellarg(PACKAGE_ROOT));
 	}
 
 	/**
