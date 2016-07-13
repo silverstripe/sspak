@@ -145,7 +145,7 @@ class Process {
 
 		if($options['throwException'] && $result['return'] != 0)	{
 			throw new Exception("Command: $command\nExecution failed: returned {$result['return']}.\n"
-				. (empty($result['output']) ? "" : "Output:\n{$result['output']}"));
+				. (empty($result['error']) ? "" : "Output:\n{$result['error']}"));
 		}
 
 		return $result;
