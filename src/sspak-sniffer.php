@@ -17,7 +17,9 @@ if($basePath[0] != '/') $basePath = getcwd() . '/' . $basePath;
 
 // SilverStripe bootstrap
 define('BASE_PATH', $basePath);
-define('BASE_URL', '/');
+if (!defined('BASE_URL')) {
+	define('BASE_URL', '/');
+}
 $_SERVER['HTTP_HOST'] = 'localhost';
 chdir(BASE_PATH);
 
