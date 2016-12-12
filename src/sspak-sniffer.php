@@ -25,6 +25,9 @@ chdir(BASE_PATH);
 
 if(file_exists(BASE_PATH.'/framework/core/Core.php')) {
 	require_once(BASE_PATH. '/framework/core/Core.php');
+} else if(file_exists(BASE_PATH.'/framework/src/Core/Core.php')) {
+	require_once(BASE_PATH. '/vendor/autoload.php');
+	require_once(BASE_PATH. '/framework/src/Core/Core.php');
 } else if(file_exists(BASE_PATH.'/sapphire/core/Core.php')) {
 	require_once(BASE_PATH. '/sapphire/core/Core.php');
 } else {
