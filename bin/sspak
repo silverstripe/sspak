@@ -6,7 +6,11 @@ if (!defined('PACKAGE_ROOT')) {
 	define('PACKAGE_ROOT', dirname(dirname(__FILE__)) . '/');
 }
 
-require_once PACKAGE_ROOT . 'vendor/autoload.php';
+// We only need composer once
+if (!defined('SSPAK_COMPOSER_INSTALL') || !SSPAK_COMPOSER_INSTALL) {
+	require_once PACKAGE_ROOT . 'vendor/autoload.php';
+}
+
 require_once PACKAGE_ROOT . 'src/Args.php';
 require_once PACKAGE_ROOT . 'src/Executor.php';
 require_once PACKAGE_ROOT . 'src/SSPak.php';

@@ -22,7 +22,13 @@ By convention, the file should have the extension `.sspak` for non-executable ve
 
 ## Installation
 
-You can run the installation script one of two ways.
+You can run the installation script one of three ways.
+
+### Composer
+
+You can install this package globally with Composer (ensure your composer bin is in your system path):
+
+    $> composer global require silverstripe/sspak
 
 ### cURL
 
