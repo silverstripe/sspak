@@ -2,16 +2,17 @@
 <?php
 
 // Root from which to refer to src/
-if(!defined('PACKAGE_ROOT')) define('PACKAGE_ROOT', dirname(dirname(__FILE__)) . '/');
+if (!defined('PACKAGE_ROOT')) {
+	define('PACKAGE_ROOT', dirname(dirname(__FILE__)) . '/');
+}
 
-require_once(PACKAGE_ROOT . 'src/Args.php');
-require_once(PACKAGE_ROOT . 'src/Executor.php');
-require_once(PACKAGE_ROOT . 'src/SSPak.php');
-require_once(PACKAGE_ROOT . 'src/FilesystemEntity.php');
-require_once(PACKAGE_ROOT . 'src/SSPakFile.php');
-require_once(PACKAGE_ROOT . 'src/Webroot.php');
-
-require_once(PACKAGE_ROOT . 'vendor/autoload.php');
+require_once PACKAGE_ROOT . 'vendor/autoload.php';
+require_once PACKAGE_ROOT . 'src/Args.php';
+require_once PACKAGE_ROOT . 'src/Executor.php';
+require_once PACKAGE_ROOT . 'src/SSPak.php';
+require_once PACKAGE_ROOT . 'src/FilesystemEntity.php';
+require_once PACKAGE_ROOT . 'src/SSPakFile.php';
+require_once PACKAGE_ROOT . 'src/Webroot.php';
 
 $argObj = new Args($_SERVER['argv']);
 /*
