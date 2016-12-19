@@ -23,12 +23,18 @@ if (!defined('BASE_URL')) {
 $_SERVER['HTTP_HOST'] = 'localhost';
 chdir(BASE_PATH);
 
-if(file_exists(BASE_PATH.'/framework/core/Core.php')) {
+if(file_exists(BASE_PATH.'/sapphire/core/Core.php')) {
+	//SS 2.x
+	require_once(BASE_PATH . '/sapphire/core/Core.php');
+} else if(file_exists(BASE_PATH.'/framework/core/Core.php')) {
+	//SS 3.x
 	require_once(BASE_PATH. '/framework/core/Core.php');
-} else if(file_exists(BASE_PATH.'/sapphire/core/Core.php')) {
-	require_once(BASE_PATH. '/sapphire/core/Core.php');
+} else if(file_exists(BASE_PATH.'/framework/src/Core/Core.php')) {
+	//SS 4.x
+	require_once(BASE_PATH. '/vendor/autoload.php');
+	require_once(BASE_PATH. '/framework/src/Core/Core.php');
 } else {
-	echo "No framework/core/Core.php or sapphire/core/Core.php included in project.  Perhaps " . BASE_PATH . " is not a SilverStripe project?\n";
+	echo "Couldn't locate framework's Core.php. Perhaps " . BASE_PATH . " is not a SilverStripe project?\n";
 	exit(2);
 }
 
