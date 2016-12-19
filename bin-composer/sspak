@@ -1,0 +1,8 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Run SSPak with composer!
+ */
+define('PACKAGE_ROOT', dirname(__FILE__) . '/../');
+define('SSPAK_COMPOSER_INSTALL', true);
+require_once PACKAGE_ROOT . 'bin/sspak';
