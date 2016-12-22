@@ -147,6 +147,32 @@ class SSPak {
 		$file = $unnamedArgs[0];
 		$dest = !empty($unnamedArgs[1]) ? $unnamedArgs[1] : getcwd();
 
+		// Phar and PharData use "ustar" format for tar archives (http://php.net/manual/pl/phar.fileformat.tar.php).
+		// Ustar does not support files larger than 8 GB.
+		// If the sspak has been created through tar and gz directly, it will probably be in POSIX, PAX or GNU formats,
+		// which do support >8 GB files. Such archive cannot be accessed by Phar/PharData, and needs to be handled
+		// manually - it will just spew checksum errors where PHP expects to see ustar headers, but finds garbage
+		// from other formats.
+		// There is no cross-platform way of checking the assets.tar.gz size without unpacking, so we assume the size
+		// of database is negligible which lets us approximate the size of assets.
+		if (filesize($file) > 8*1024*1024*1024) {
+			$msg = <<<EOM
+
+ERROR: SSPak is unable to extract archives over 8 GB.
+
+Packed asset or database sizes over 8 GB are not supported due to PHP Phar library limitations.
+You can still access your data directly by using the tar utility:
+
+	tar xzf "%s"
+
+This tool is sorry for the inconvenience and stands aside in disgrace.
+See http://silverstripe.github.io/sspak/, "Manual access" for more information.
+
+EOM;
+			printf($msg, $file);
+			die(1);
+		}
+
 		$sspak = new SSPakFile($file, $executor);
 
 		// Validation
