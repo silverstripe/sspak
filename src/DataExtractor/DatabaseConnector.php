@@ -14,11 +14,11 @@ class DatabaseConnector
 	private $basePath;
 	private $isConnected = false;
 
-	function __construct($basePath) {
+	public function __construct($basePath) {
 		$this->basePath = $basePath;
 	}
 
-	function connect() {
+	public function connect() {
 		if ($this->isConnected) {
 			return;
 		}
@@ -53,7 +53,7 @@ class DatabaseConnector
 		}
 	}
 
-	function getDatabase() {
+	public function getDatabase() {
 		$this->connect();
 
 		if(method_exists('DB', 'get_conn')) {
@@ -66,7 +66,7 @@ class DatabaseConnector
 	/**
 	 * Get a list of tables from the database
 	 */
-	function getTables() {
+	public function getTables() {
 		$this->connect();
 
 		if(method_exists('DB', 'table_list')) {
@@ -79,7 +79,7 @@ class DatabaseConnector
 	/**
 	 * Get a list of tables from the database
 	 */
-	function getFieldsForTable($tableName) {
+	public function getFieldsForTable($tableName) {
 		$this->connect();
 
 		if(method_exists('DB', 'field_list')) {
@@ -92,7 +92,7 @@ class DatabaseConnector
 	/**
 	 * Save the named table to the given table write
 	 */
-	function saveTable($tableName, TableWriter $writer) {
+	public function saveTable($tableName, TableWriter $writer) {
 		$query = $this->getDatabase()->query("SELECT * FROM \"$tableName\"");
 
 		foreach ($query as $record) {
@@ -105,7 +105,7 @@ class DatabaseConnector
 	/**
 	 * Save the named table to the given table write
 	 */
-	function loadTable($tableName, TableReader $reader) {
+	public function loadTable($tableName, TableReader $reader) {
 		$this->getDatabase()->clearTable($tableName);
 
 		$fields = $this->getFieldsForTable($tableName);

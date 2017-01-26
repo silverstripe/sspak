@@ -23,24 +23,24 @@ class Executor {
 	 * @param boolean $inputContent Content for STDIN. Otherwise the parent script's STDIN is used
 	 * @return A map containing 'return', 'output', and 'error'
 	 */
-	function execLocal($command, $options = array()) {
+	public function execLocal($command, $options = array()) {
 		$process = $this->createLocal($command, $options);
 		return $process->exec();
 	}
 
-	function execRemote($command, $options = array()) {
+	public function execRemote($command, $options = array()) {
 		$process = $this->createRemote($command, $options);
 		return $process->exec();
 	}
 
-	function createLocal($command, $options) {
+	public function createLocal($command, $options) {
 		$options = array_merge($this->defaultOptions, $options);
 		if(is_array($command)) $command = $this->commandArrayToString($command);
 
 		return new Process($command, $options);
 	}
 
-	function createRemote($server, $command, $options = array()) {
+	public function createRemote($server, $command, $options = array()) {
 		$process = $this->createLocal($command, $options);
 		$process->setRemoteServer($server);
 		return $process;
@@ -51,7 +51,7 @@ class Executor {
 	 * @param array $command Command array. First element is the command and all remaining are the arguments.
 	 * @return string String command
 	 */
-	function commandArrayToString($command) {
+	public function commandArrayToString($command) {
 		$string = escapeshellcmd(array_shift($command));
 		foreach($command as $arg) {
 			$string .= ' ' . escapeshellarg($arg);
@@ -67,16 +67,16 @@ class Process {
 	protected $options;
 	protected $remoteServer = null;
 
-	function __construct($command, $options = array()) {
+	public function __construct($command, $options = array()) {
 		$this->command = $command;
 		$this->options = $options;
 	}
 
-	function setRemoteServer($remoteServer) {
+	public function setRemoteServer($remoteServer) {
 		$this->remoteServer = $remoteServer;
 	}
 
-	function exec($options = array()) {
+	public function exec($options = array()) {
 		$options = array_merge($this->options, $options);
 
 		// Modify command for remote execution, if necessary.
