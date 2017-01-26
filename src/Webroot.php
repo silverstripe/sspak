@@ -58,7 +58,7 @@ class Webroot extends FilesystemEntity {
 
 				return $this->exec("sudo -S -p '' -u " . escapeshellarg($this->sudo) . " " . $command, array('inputContent' => $password));
 			}
-		
+
 		} else {
 			return $this->exec($command);
 		}
@@ -138,27 +138,28 @@ class Webroot extends FilesystemEntity {
 	function putassets($sspak) {
 		$details = $this->details();
 		$assetsPath = $details['assets_path'];
+		$assetsOldPath = $assetsPath . '.old';
 
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
-		$assetsBaseArg = escapeshellarg(basename($assetsPath));
-		$assetsBaseOldArg = escapeshellarg(basename($assetsPath).'.old');
 
+		$assetsPath = escapeshellarg($assetsPath);
+		$assetsOldPath = escapeshellarg($assetsOldPath);
 		// Move existing assets to assets.old
-		$this->exec("if [ -d $assetsBaseArg ]; then mv $assetsBaseArg $assetsBaseOldArg; fi");
+		$this->exec("if [ -d {$assetsPath} ]; then mv {$assetsPath} {$assetsOldPath}; fi");
 
 		// Extract assets
 		$stream = $sspak->readStreamForFile('assets.tar.gz');
-		$this->exec("tar xzf - -C $assetsParentArg", array('inputStream' => $stream));
+		$this->exec("tar xzf - -C {$assetsParentArg}", array('inputStream' => $stream));
 		fclose($stream);
 
 		// Remove assets.old
-		$this->exec("if [ -d $assetsBaseOldArg ]; then rm -rf $assetsBaseOldArg; fi");
+		$this->exec("if [ -d {$assetsOldPath} ]; then rm -rf {$assetsOldPath}; fi");
 	}
 
 	/**
 	 * Load a git remote into this webroot.
 	 * It expects that this remote is an empty directory.
-	 * 
+	 *
 	 * @param array $details Map of git details
 	 */
 	function putgit($details) {
