@@ -11,7 +11,7 @@ class SmokeTest extends PHPUnit_Framework_TestCase
 	/**
 	 * Check that the help output of the binary matches what the internal function generates
 	 */
-	function testHelpOutput() {
+	public function testHelpOutput() {
 		$ssPak = new SSPak(null);
 
 		// Internal call

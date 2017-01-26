@@ -7,7 +7,7 @@ class Webroot extends FilesystemEntity {
 	protected $sudo = null;
 	protected $details = null;
 
-	function setSudo($sudo) {
+	public function setSudo($sudo) {
 		$this->sudo = $sudo;
 	}
 
@@ -15,7 +15,7 @@ class Webroot extends FilesystemEntity {
 	 * Return a map of the db & asset config details.
 	 * Calls sniff once and then caches
 	 */
-	function details() {
+	public function details() {
 		if(!$this->details) $this->details = $this->sniff();
 		return $this->details;
 	}
@@ -23,7 +23,7 @@ class Webroot extends FilesystemEntity {
 	/**
 	 * Return a map of the db & asset config details, acquired with ssnap-sniffer
 	 */
-	function sniff() {
+	public function sniff() {
 		global $snifferFileContent;
 
 		if(!$snifferFileContent) $snifferFileContent = file_get_contents(PACKAGE_ROOT . 'src/sspak-sniffer.php');
@@ -43,7 +43,7 @@ class Webroot extends FilesystemEntity {
 	 * Execute a command on the relevant server, using the given sudo option
 	 * @param  string $command Shell command, either a fully escaped string or an array
 	 */
-	function execSudo($command) {
+	public function execSudo($command) {
 		if($this->sudo) {
 			if(is_array($command)) $command = $this->executor->commandArrayToString($command);
 			// Try running sudo without asking for a password
@@ -58,7 +58,7 @@ class Webroot extends FilesystemEntity {
 
 				return $this->exec("sudo -S -p '' -u " . escapeshellarg($this->sudo) . " " . $command, array('inputContent' => $password));
 			}
-		
+
 		} else {
 			return $this->exec($command);
 		}
@@ -70,7 +70,7 @@ class Webroot extends FilesystemEntity {
 	 * @param bool $dropdb Drop the DB prior to install
 	 * @param string $sspakFile Filename
 	 */
-	function putdb($sspak, $dropdb) {
+	public function putdb($sspak, $dropdb) {
 		$details = $this->details();
 
 		// Check the database type
@@ -83,11 +83,11 @@ class Webroot extends FilesystemEntity {
 		return $this->$dbFunction($details, $sspak, $dropdb);
 	}
 
-	function putdb_MySQLPDODatabase($conf, $sspak, $dropdb) {
+	public function putdb_MySQLPDODatabase($conf, $sspak, $dropdb) {
 		return $this->putdb_MySQLDatabase($conf, $sspak, $dropdb);
 	}
 
-	function putdb_MySQLDatabase($conf, $sspak, $dropdb) {
+	public function putdb_MySQLDatabase($conf, $sspak, $dropdb) {
 		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
 		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
 		$databaseArg = escapeshellarg($conf['db_database']);
@@ -117,7 +117,7 @@ class Webroot extends FilesystemEntity {
 		return true;
 	}
 
-	function putdb_PostgreSQLDatabase($conf, $sspak, $dropdb) {
+	public function putdb_PostgreSQLDatabase($conf, $sspak, $dropdb) {
 		// TODO: Support dropdb for postgresql
 		$usernameArg = escapeshellarg("--username=".$conf['db_username']);
 		$passwordArg = "PGPASSWORD=".escapeshellarg($conf['db_password']);
@@ -135,7 +135,7 @@ class Webroot extends FilesystemEntity {
 		fclose($stream);
 	}
 
-	function putassets($sspak) {
+	public function putassets($sspak) {
 		$details = $this->details();
 		$assetsPath = $details['assets_path'];
 
@@ -158,10 +158,10 @@ class Webroot extends FilesystemEntity {
 	/**
 	 * Load a git remote into this webroot.
 	 * It expects that this remote is an empty directory.
-	 * 
+	 *
 	 * @param array $details Map of git details
 	 */
-	function putgit($details) {
+	public function putgit($details) {
 		$this->exec(array('git', 'clone', $details['remote'], $this->path));
 		$this->exec("cd $this->path && git checkout " . escapeshellarg($details['branch']));
 		return true;

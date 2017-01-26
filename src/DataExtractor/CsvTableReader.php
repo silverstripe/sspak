@@ -9,18 +9,18 @@ class CsvTableReader implements TableReader
 	private $handle;
 	private $columns;
 
-	function __construct($filename) {
+	public function __construct($filename) {
 		$this->filename = $filename;
 	}
 
-	function getColumns() {
+	public function getColumns() {
 		if (!$this->columns) {
 			$this->initColumns();
 		}
 		return $this->columns;
 	}
 
-	function getIterator() {
+	public function getIterator() {
 		$this->columns = null;
 		$this->initColumns();
 

@@ -4,7 +4,7 @@ use SilverStripe\SsPak\DataExtractor\CsvTableWriter;
 
 class CsvTableWriterTest extends PHPUnit_Framework_TestCase
 {
-	function testCsvReading() {
+	public function testCsvReading() {
 
 		if (file_exists('/tmp/output.csv')) {
 			unlink('/tmp/output.csv');
@@ -25,7 +25,7 @@ class CsvTableWriterTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals($fixture, $csvContent);
 	}
 
-	function testNoStartCall() {
+	public function testNoStartCall() {
 
 		if (file_exists('/tmp/output.csv')) {
 			unlink('/tmp/output.csv');

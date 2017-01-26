@@ -6,7 +6,7 @@ class SSPakFile extends FilesystemEntity {
 	protected $pharAlias;
 	protected $pharPath;
 
-	function __construct($path, $executor, $pharAlias = 'sspak.phar') {
+	public function __construct($path, $executor, $pharAlias = 'sspak.phar') {
 		parent::__construct($path, $executor);
 		if(!$this->isLocal()) throw new LogicException("Can't manipulate remote .sspak.phar files, only remote webroots.");
 
@@ -26,14 +26,14 @@ class SSPakFile extends FilesystemEntity {
 		}
 	}
 
-	function getPhar() {
+	public function getPhar() {
 		return $this->phar;
 	}
 
 	/**
 	 * Add the SSPak executable information into this SSPak file
 	 */
-	function makeExecutable() {
+	public function makeExecutable() {
 		if(ini_get('phar.readonly')) {
 			throw new Exception("Please set phar.readonly to false in your php.ini.");
 		}
@@ -82,14 +82,14 @@ STUB;
 	 * @param string $file The filename to look for
 	 * @return boolean
 	 */
-	function contains($file) {
+	public function contains($file) {
 		return $this->phar->offsetExists($file);
 	}
 
 	/**
 	 * Returns the content of a file from this sspak
 	 */
-	function content($file) {
+	public function content($file) {
 		return file_get_contents($this->phar[$file]);
 	}
 
@@ -99,7 +99,7 @@ STUB;
 	 * @param  Process $process  The process to execute and take the output from
 	 * @return null
 	 */
-	function writeFileFromProcess($filename, Process $process) {
+	public function writeFileFromProcess($filename, Process $process) {
 		// Non-executable Phars can't have content streamed into them
 		// This means that we need to create a temp file, which is a pain, if that file happens to be a 3GB
 		// asset dump. :-/
@@ -122,7 +122,7 @@ STUB;
 	 * @param  string $filename The name of the file within the .sspak
 	 * @return Stream context
 	 */
-	function writeStreamForFile($filename) {
+	public function writeStreamForFile($filename) {
 		return fopen('phar://' . $this->pharAlias . '/' . $filename, 'w');
 	}
 
@@ -131,7 +131,7 @@ STUB;
 	 * @param  string $filename The name of the file within the .sspak
 	 * @return Stream context
 	 */
-	function readStreamForFile($filename) {
+	public function readStreamForFile($filename) {
 		// Note: using pharAlias here doesn't work on Debian Wheezy (nor on Windows for that matter).
 		//return fopen('phar://' . $this->pharAlias . '/' . $filename, 'r');
 		return fopen('phar://' . $this->pharPath . '/' . $filename, 'r');
@@ -143,14 +143,14 @@ STUB;
 	 * @param  string $content The content of the file
 	 * @return null
 	 */
-	function writeFile($filename, $content) {
+	public function writeFile($filename, $content) {
 		$this->phar[$filename] = $content;
 	}
 
 	/**
 	 * Extracts the git remote details and reutrns them as a map
 	 */
-	function gitRemoteDetails() {
+	public function gitRemoteDetails() {
 		$content = $this->content('git-remote');
 		$details = array();
 		foreach(explode("\n", trim($content)) as $line) {

@@ -9,7 +9,7 @@ class FilesystemEntity {
 	protected $executor;
 	protected $identity = null;
 
-	function __construct($path, $executor) {
+	public function __construct($path, $executor) {
 		$this->executor = $executor;
 
 		if(strpos($path,':') !== false) {
@@ -20,16 +20,16 @@ class FilesystemEntity {
 		}
 	}
 
-	function isLocal() {
+	public function isLocal() {
 		return $this->server == null;
 	}
-	function getPath() {
+	public function getPath() {
 		return $this->path;
 	}
-	function getServer() {
+	public function getServer() {
 		return $this->server;
 	}
-	function setSSHItentityFile($filename) {
+	public function setSSHItentityFile($filename) {
 		$this->identity = $filename;
 	}
 
@@ -37,7 +37,7 @@ class FilesystemEntity {
 	 * Execute a command on the relevant server
 	 * @param  string $command Shell command, either a fully escaped string or an array
 	 */
-	function exec($command, $options = array()) {
+	public function exec($command, $options = array()) {
 		return $this->createProcess($command, $options)->exec();
 	}
 
@@ -46,7 +46,7 @@ class FilesystemEntity {
 	 * @param  string $command Shell command, either a fully escaped string or an array
 	 * @return Process
 	 */
-	function createProcess($command, $options = array()) {
+	public function createProcess($command, $options = array()) {
 		if($this->server) {
 			if ($this->identity && !isset($options['identity'])) {
 				$options['identity'] = $this->identity;
@@ -62,7 +62,7 @@ class FilesystemEntity {
 	 * @param string $file The file to upload
 	 * @param string $dest The remote filename/dir to upload to
 	 */
-	function upload($source, $dest) {
+	public function upload($source, $dest) {
 		if($this->server) {
 			$this->executor->execLocal(array("scp", $source, "$this->server:$dest"));
 		} else {
@@ -75,7 +75,7 @@ class FilesystemEntity {
 	 * @param string $content The content of the file
 	 * @param string $dest The remote filename/dir to upload to
 	 */
-	function uploadContent($content, $dest) {
+	public function uploadContent($content, $dest) {
 		$this->exec("echo " . escapeshellarg($content) . " > " . escapeshellarg($dest));
 	}
 
@@ -84,7 +84,7 @@ class FilesystemEntity {
 	 * @param string $source The remote filename to download
 	 * @param string $dest The local filename/dir to download to
 	 */
-	function download($source, $dest) {
+	public function download($source, $dest) {
 		if($this->server) {
 			$this->executor->execLocal(array("scp", "$this->server:$source", $dest));
 		} else {
@@ -97,7 +97,7 @@ class FilesystemEntity {
 	 * @param string $file The file/dir to look for
 	 * @return boolean
 	 */
-	function exists($file = null) {
+	public function exists($file = null) {
 		if(!$file) $file = $this->path;
 		if($file == '@self') return true;
 
@@ -113,7 +113,7 @@ class FilesystemEntity {
 	/**
 	 * Create the given file with the given content
 	 */
-	function writeFile($file, $content) {
+	public function writeFile($file, $content) {
 		if($this->server) {
 			$this->exec("echo " . escapeshellarg($content) . " > " . escapeshellarg($file));
 
@@ -127,7 +127,7 @@ class FilesystemEntity {
 	 *
 	 * @param string $file The file to remove
 	 */
-	function unlink($file) {
+	public function unlink($file) {
 		if(!$file || $file == '/' || $file == '.') throw new Exception("Can't unlink file '$file'");
 		$this->exec(array('rm', '-rf', $file));
 		return true;

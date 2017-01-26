@@ -4,7 +4,7 @@ use SilverStripe\SsPak\DataExtractor\CsvTableReader;
 
 class CsvTableReaderTest extends PHPUnit_Framework_TestCase
 {
-	function testCsvReading() {
+	public function testCsvReading() {
 
 		$csv = new CsvTableReader(__DIR__ . '/fixture/input.csv');
 		$this->assertEquals(['Col1', 'Col2', 'Col3'], $csv->getColumns());

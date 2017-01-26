@@ -9,21 +9,21 @@ class CsvTableWriter implements TableWriter
 	private $handle;
 	private $columns;
 
-	function __construct($filename) {
+	public function __construct($filename) {
 		$this->filename = $filename;
 	}
 
-	function start($columns) {
+	public function start($columns) {
 		$this->open();
 		$this->putRow($columns);
 		$this->columns = $columns;
 	}
 
-	function finish() {
+	public function finish() {
 		$this->close();
 	}
 
-	function writeRecord($record) {
+	public function writeRecord($record) {
 		if (!$this->columns) {
 			$this->start(array_keys($record));
 		}

@@ -14,11 +14,11 @@ class SSPak {
 	 * Create a new handler
 	 * @param Executor $executor The Executor object to handle command execution
 	 */
-	function __construct($executor) {
+	public function __construct($executor) {
 		$this->executor = $executor;
 	}
 
-	function getActions() {
+	public function getActions() {
 		return array(
 			"help" => array(
 				"description" => "Show this help message.",
@@ -86,7 +86,7 @@ class SSPak {
 		);
 	}
 
-	function help($args) {
+	public function help($args) {
 		echo "SSPak: manage SilverStripe .sspak archives.\n\nUsage:\n";
 		foreach($this->getActions() as $action => $info) {
 			echo "sspak $action";
@@ -107,7 +107,7 @@ class SSPak {
 	 * Save an existing database and/or assets into an .sspak.phar file.
 	 * Does the same as {@link save()} but doesn't require an existing site.
 	 */
-	function saveexisting($args) {
+	public function saveexisting($args) {
 		$executor = $this->executor;
 
 		$args->requireUnnamed(array('sspak file'));
@@ -139,7 +139,7 @@ class SSPak {
 	 * Extracts an existing database and/or assets from a sspak into the given directory,
 	 * defaulting the current working directory if the destination is not given.
 	 */
-	function extract($args) {
+	public function extract($args) {
 		$executor = $this->executor;
 
 		$args->requireUnnamed(array('source sspak file'));
@@ -156,7 +156,7 @@ class SSPak {
 		$phar->extractTo($dest);
 	}
 
-	function listTables($args) {
+	public function listTables($args) {
 		$args->requireUnnamed(array('webroot'));
 		$unnamedArgs = $args->getUnnamedArgs();
 		$webroot = $unnamedArgs[0];
@@ -166,7 +166,7 @@ class SSPak {
 		print_r($db->getTables());
 	}
 
-	function saveCsv($args) {
+	public function saveCsv($args) {
 		$args->requireUnnamed(array('webroot', 'path'));
 		$unnamedArgs = $args->getUnnamedArgs();
 		$webroot = $unnamedArgs[0];
@@ -191,7 +191,7 @@ class SSPak {
 		echo "Done!";
 	}
 
-	function loadCsv($args) {
+	public function loadCsv($args) {
 		$args->requireUnnamed(array('input-path', 'webroot'));
 		$unnamedArgs = $args->getUnnamedArgs();
 
@@ -219,7 +219,7 @@ class SSPak {
 	/**
 	 * Save a .sspak.phar file
 	 */
-	function save($args) {
+	public function save($args) {
 		$executor = $this->executor;
 
 		$args->requireUnnamed(array('source webroot', 'dest sspak file'));
@@ -281,11 +281,11 @@ class SSPak {
 		$webroot->unlink($buildFolder);
 	}
 
-	function getdb_MySQLPDODatabase($webroot, $conf, $sspak, $filename) {
+	public function getdb_MySQLPDODatabase($webroot, $conf, $sspak, $filename) {
 		return $this->getdb_MySQLDatabase($webroot, $conf, $sspak, $filename);
 	}
 
-	function getdb_MySQLDatabase($webroot, $conf, $sspak, $filename) {
+	public function getdb_MySQLDatabase($webroot, $conf, $sspak, $filename) {
 		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
 		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
 		$databaseArg = escapeshellarg($conf['db_database']);
@@ -310,7 +310,7 @@ class SSPak {
 		return true;
 	}
 
-	function getdb_PostgreSQLDatabase($webroot, $conf, $sspak, $filename) {
+	public function getdb_PostgreSQLDatabase($webroot, $conf, $sspak, $filename) {
 		$usernameArg = escapeshellarg("--username=".$conf['db_username']);
 		$passwordArg = "PGPASSWORD=".escapeshellarg($conf['db_password']);
 		$databaseArg = escapeshellarg($conf['db_database']);
@@ -322,7 +322,7 @@ class SSPak {
 		return true;
 	}
 
-	function getassets($webroot, $assetsPath, $sspak, $filename) {
+	public function getassets($webroot, $assetsPath, $sspak, $filename) {
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
 		$assetsBaseArg = escapeshellarg(basename($assetsPath));
 
@@ -330,7 +330,7 @@ class SSPak {
 		$sspak->writeFileFromProcess($filename, $process);
 	}
 
-	function getgitremote($webroot, $sspak, $gitRemoteFile) {
+	public function getgitremote($webroot, $sspak, $gitRemoteFile) {
 		// Only do anything if we're copying from a git checkout
 		$gitRepo = $webroot->getPath() .'/.git';
 		if($webroot->exists($gitRepo)) {
@@ -369,7 +369,7 @@ class SSPak {
 	/**
 	 * Load an .sspak into an environment.
 	 * Does not backup - be careful! */
-	function load($args) {
+	public function load($args) {
 		$executor = $this->executor;
 
 		$args->requireUnnamed(array('source sspak file'));
@@ -405,7 +405,7 @@ class SSPak {
 	/**
 	 * Install an .sspak into a new environment.
 	 */
-	function install($args) {
+	public function install($args) {
 		$executor = $this->executor;
 
 		$args->requireUnnamed(array('source sspak file', 'dest new webroot'));
@@ -447,7 +447,7 @@ class SSPak {
 	/**
 	 * Bundle a .sspak into a self-extracting executable installer.
 	 */
-	function bundle($args) {
+	public function bundle($args) {
 		// TODO: throws require_once errors, fix before re-enabling.
 
 		$executor = $this->executor;
@@ -483,7 +483,7 @@ class SSPak {
 	/**
 	 * Transfer between environments without creating an sspak file
 	 */
-	function transfer($args) {
+	public function transfer($args) {
 		echo "Not implemented yet.\n";
 	}
 }
