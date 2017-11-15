@@ -138,12 +138,15 @@ class Webroot extends FilesystemEntity {
 	public function putassets($sspak) {
 		$details = $this->details();
 		$assetsPath = $details['assets_path'];
-		$assetsOldPath = $assetsPath . '.old';
+		$assetsPath = escapeshellarg($assetsPath);
 
+		// Check for symlink - this was more reliable than is_link
+		$assetsPathExec = $this->exec("if [ -L {$assetsPath} ]; then readlink -f {$assetsPath}; else echo {$assetsPath}; fi");
+		$assetsPath = trim($assetsPathExec["output"]);
+
+		$assetsOldPath = $assetsPath . '.old';
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
 
-		$assetsPath = escapeshellarg($assetsPath);
-		$assetsOldPath = escapeshellarg($assetsOldPath);
 		// Move existing assets to assets.old
 		$this->exec("if [ -d {$assetsPath} ]; then mv {$assetsPath} {$assetsOldPath}; fi");
 
