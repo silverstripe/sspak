@@ -42,6 +42,9 @@ For example, this would also work:
 
 	$> cd /usr/local/bin
 	$> curl -sS https://silverstripe.github.io/sspak/install | sudo php
+	
+#### To validate the installer, you can verify it's SHA256 checksum
+`61a4124fc057efc79cb786606598e0e72d6955683dfaa0b8a115fe221487b475`
 
 ### Manually
 
@@ -51,6 +54,10 @@ If you prefer not to use the installer, you can download the script and copy it 
 	$> chmod +x sspak.phar
 	$> sudo mv sspak.phar /usr/local/bin/sspak
 
+
+The SHA256 checksum of the `sspak.phar` file is:
+
+`372a2de09d8da382f93679a935a054935fb3aeeeea0f4c60b3e1b6705ba7281a`
 
 ## Common Issues
 
