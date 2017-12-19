@@ -16,7 +16,7 @@ $basePath = $_SERVER['argv'][1];
 if($basePath[0] != '/') $basePath = getcwd() . '/' . $basePath;
 
 // SilverStripe bootstrap
-define('BASE_PATH', $basePath);
+define('BASE_PATH', realpath($basePath));
 if (!defined('BASE_URL')) {
 	define('BASE_URL', '/');
 }
@@ -29,10 +29,17 @@ if(file_exists(BASE_PATH.'/sapphire/core/Core.php')) {
 } else if(file_exists(BASE_PATH.'/framework/core/Core.php')) {
 	//SS 3.x
 	require_once(BASE_PATH. '/framework/core/Core.php');
-} else if(file_exists(BASE_PATH.'/framework/src/Core/Core.php')) {
+} else if(file_exists(BASE_PATH.'/vendor/silverstripe/framework')) {
 	//SS 4.x
 	require_once(BASE_PATH. '/vendor/autoload.php');
-	require_once(BASE_PATH. '/framework/src/Core/Core.php');
+	$kernel = new SilverStripe\Core\CoreKernel(BASE_PATH);
+	//boot the parts of the kernel to populate the DB config
+	foreach (array('bootDatabaseEnvVars', 'bootDatabaseGlobals') as $bootMethod) {
+		$reflectedBootMethod = new ReflectionMethod($kernel, $bootMethod);
+		$reflectedBootMethod->setAccessible(true);
+		$reflectedBootMethod->invoke($kernel);
+	}
+	$databaseConfig = SilverStripe\ORM\DB::getConfig();
 } else {
 	echo "Couldn't locate framework's Core.php. Perhaps " . BASE_PATH . " is not a SilverStripe project?\n";
 	exit(2);
