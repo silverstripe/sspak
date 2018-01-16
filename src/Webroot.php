@@ -43,12 +43,12 @@ class Webroot extends FilesystemEntity {
 	 * Execute a command on the relevant server, using the given sudo option
 	 * @param  string $command Shell command, either a fully escaped string or an array
 	 */
-	public function execSudo($command) {
+	public function execSudo($command, $options = array()) {
 		if($this->sudo) {
 			if(is_array($command)) $command = $this->executor->commandArrayToString($command);
 			// Try running sudo without asking for a password
 			try {
-				return $this->exec("sudo -n -u " . escapeshellarg($this->sudo) . " " . $command);
+				return $this->exec("sudo -n -u " . escapeshellarg($this->sudo) . " " . $command, $options);
 
 			// Otherwise capture SUDO password ourselves and pass it in through STDIN
 			} catch(Exception $e) {
@@ -60,7 +60,7 @@ class Webroot extends FilesystemEntity {
 			}
 
 		} else {
-			return $this->exec($command);
+			return $this->exec($command, $options);
 		}
 	}
 
@@ -147,16 +147,20 @@ class Webroot extends FilesystemEntity {
 		$assetsOldPath = $assetsPath . '.old';
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
 
+		// Remove assets.old
+		if (file_exists($assetsOldPath)) {
+			$this->execSudo("rm -rf {$assetsOldPath}");
+		}
+
 		// Move existing assets to assets.old
-		$this->exec("if [ -d {$assetsPath} ]; then mv {$assetsPath} {$assetsOldPath}; fi");
+		if (file_exists($assetsPath)) {
+			$this->execSudo("mv {$assetsPath} {$assetsOldPath}");
+		}
 
 		// Extract assets
 		$stream = $sspak->readStreamForFile('assets.tar.gz');
-		$this->exec("tar xzf - -C {$assetsParentArg}", array('inputStream' => $stream));
+		$this->execSudo("tar xzf - -C {$assetsParentArg}", array('inputStream' => $stream));
 		fclose($stream);
-
-		// Remove assets.old
-		$this->exec("if [ -d {$assetsOldPath} ]; then rm -rf {$assetsOldPath}; fi");
 	}
 
 	/**
