@@ -41,7 +41,9 @@ class Webroot extends FilesystemEntity {
 
 	/**
 	 * Execute a command on the relevant server, using the given sudo option
-	 * @param  string $command Shell command, either a fully escaped string or an array
+	 * @param string|array $command Shell command, either a fully escaped string or an array
+	 * @see Process::exec @param $options (optional) Extra options
+	 * @return array A map containing 'return', 'output', and 'error'
 	 */
 	public function execSudo($command, $options = array()) {
 		if($this->sudo) {
@@ -135,6 +137,10 @@ class Webroot extends FilesystemEntity {
 		fclose($stream);
 	}
 
+	/**
+	 * @param $sspak SSPakFile SSPak file to extract assets from
+	 * @todo There should be a return value or exception thrown to indicate success or failure to put assets
+	 */
 	public function putassets($sspak) {
 		$details = $this->details();
 		$assetsPath = $details['assets_path'];
@@ -147,11 +153,6 @@ class Webroot extends FilesystemEntity {
 		$assetsOldPath = $assetsPath . '.old';
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
 
-		// Remove assets.old
-		if (file_exists($assetsOldPath)) {
-			$this->execSudo("rm -rf {$assetsOldPath}");
-		}
-
 		// Move existing assets to assets.old
 		if (file_exists($assetsPath)) {
 			$this->execSudo("mv {$assetsPath} {$assetsOldPath}");
@@ -161,6 +162,11 @@ class Webroot extends FilesystemEntity {
 		$stream = $sspak->readStreamForFile('assets.tar.gz');
 		$this->execSudo("tar xzf - -C {$assetsParentArg}", array('inputStream' => $stream));
 		fclose($stream);
+
+		// Remove assets.old
+		if (file_exists($assetsOldPath)) {
+			$this->execSudo("rm -rf {$assetsOldPath}");
+		}
 	}
 
 	/**
