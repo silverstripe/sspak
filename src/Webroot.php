@@ -52,7 +52,7 @@ class Webroot extends FilesystemEntity {
 			try {
 				return $this->exec("sudo -n -u " . escapeshellarg($this->sudo) . " " . $command, $options);
 
-			// Otherwise capture SUDO password ourselves and pass it in through STDIN
+				// Otherwise capture SUDO password ourselves and pass it in through STDIN
 			} catch(Exception $e) {
 				echo "[sspak sudo] Enter your password: ";
 				$stdin = fopen( 'php://stdin', 'r');
@@ -154,7 +154,8 @@ class Webroot extends FilesystemEntity {
 		$assetsParentArg = escapeshellarg(dirname($assetsPath));
 
 		// Move existing assets to assets.old
-		if (file_exists($assetsPath)) {
+		$assetsExist = $this->execSudo("test -d '$assetsPath'", ['throwException' => false]);
+		if ($assetsExist['return'] == 0) {
 			$this->execSudo("mv {$assetsPath} {$assetsOldPath}");
 		}
 
@@ -164,7 +165,8 @@ class Webroot extends FilesystemEntity {
 		fclose($stream);
 
 		// Remove assets.old
-		if (file_exists($assetsOldPath)) {
+		$oldAssetsExist = $this->execSudo("test -d '$assetsOldPath'", ['throwException' => false]);
+		if ($oldAssetsExist['return'] == 0) {
 			$this->execSudo("rm -rf {$assetsOldPath}");
 		}
 	}
