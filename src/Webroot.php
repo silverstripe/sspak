@@ -52,7 +52,7 @@ class Webroot extends FilesystemEntity {
 			try {
 				return $this->exec("sudo -n -u " . escapeshellarg($this->sudo) . " " . $command, $options);
 
-				// Otherwise capture SUDO password ourselves and pass it in through STDIN
+			// Otherwise capture SUDO password ourselves and pass it in through STDIN
 			} catch(Exception $e) {
 				echo "[sspak sudo] Enter your password: ";
 				$stdin = fopen( 'php://stdin', 'r');
