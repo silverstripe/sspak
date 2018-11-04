@@ -84,7 +84,7 @@ Create an executable sspak file by adding a phar extension:
 
 Create an sspak from existing files:
 
-	$> sspak saveexisting --db=/path/to/database.sql --assets=/path/to/assets
+	$> sspak saveexisting --db=/path/to/database.sql --assets=/path/to/assets /tmp/site.sspak
 
 Extract files from an existing sspak into the specified directory:
 
