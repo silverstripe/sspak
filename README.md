@@ -29,7 +29,7 @@ You can run the installation script one of three ways.
 
 You can install this package globally with Composer (ensure your composer bin is in your system path):
 
-    $> composer global require silverstripe/sspak
+    $> composer global require silverstripe/sspak:dev-master
 
 ### cURL
 
