@@ -273,7 +273,7 @@ EOM;
 		$details = $webroot->sniff();
 
 		// Create a build folder for the sspak file
-		$buildFolder = "/tmp/sspak-" . rand(100000,999999);
+		$buildFolder = sprintf("%s/sspak-%d", sys_get_temp_dir(), rand(100000,999999));
 		$webroot->exec(array('mkdir', $buildFolder));
 
 		$dbFile = "$buildFolder/database.sql.gz";
