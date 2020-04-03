@@ -124,6 +124,10 @@ Install a new site from an sspak (needs to contain a git-remote):
 
 	$> sspak install newsite.sspak ~/Sites/newsite
 
+Save all while using a custom TMP folder (make sure the folder exists and is writable):
+
+	$> TMPDIR="/tmp/my_custom_tmp" sspak save /var/www /tmp/site.sspak
+
 ## Caveats
 
 If you don't have PKI passwordless log-in into remote servers, you will be asked for your log-in a few times.
