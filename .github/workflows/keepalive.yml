@@ -1,0 +1,12 @@
+name: Keepalive
+on:
+  schedule:
+    - cron: '50 11 21 * *'
+  workflow_dispatch:
+jobs:
+  keepalive:
+    name: Keepalive
+    runs-on: ubuntu-latest
+    steps:
+      - name: Keepalive
+        uses: silverstripe/gha-keepalive@v1

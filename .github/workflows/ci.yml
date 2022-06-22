@@ -1,0 +1,12 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 11 * * 7'
+
+jobs:
+  ci:
+    uses: silverstripe/gha-ci/.github/workflows/ci.yml@v1
