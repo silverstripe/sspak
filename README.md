@@ -1,6 +1,6 @@
 # SSPak
 
-[![Build Status](https://api.travis-ci.com/silverstripe/sspak.svg?branch=master)](https://travis-ci.com/silverstripe/sspak)
+[![CI](https://github.com/silverstripe/sspak/actions/workflows/ci.yml/badge.svg)](https://github.com/silverstripe/sspak/actions/workflows/ci.yml)
 [![SilverStripe supported module](https://img.shields.io/badge/silverstripe-supported-0071C4.svg)](https://www.silverstripe.org/software/addons/silverstripe-commercially-supported-module-list/)
 [![Code Quality](http://img.shields.io/scrutinizer/g/silverstripe/sspak.svg?style=flat-square)](https://scrutinizer-ci.com/g/silverstripe/sspak)
 
