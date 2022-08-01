@@ -3,12 +3,12 @@
 
 // Root from which to refer to src/
 if (!defined('PACKAGE_ROOT')) {
-	define('PACKAGE_ROOT', dirname(dirname(__FILE__)) . '/');
+    define('PACKAGE_ROOT', dirname(dirname(__FILE__)) . '/');
 }
 
 // We only need composer once
 if (!defined('SSPAK_COMPOSER_INSTALL') || !SSPAK_COMPOSER_INSTALL) {
-	require_once PACKAGE_ROOT . 'vendor/autoload.php';
+    require_once PACKAGE_ROOT . 'vendor/autoload.php';
 }
 
 require_once PACKAGE_ROOT . 'src/Args.php';
@@ -22,11 +22,11 @@ $argObj = new Args($_SERVER['argv']);
 /*
 // Special case for self-extracting sspaks
 if($isSelfExtracting) {
-	$argObj->unshiftUnnamed('@self');
-	if(!in_array($argObj->getAction(), array("install", "load"))) {
-		echo "Self-extracting sspaks can only use 'install' and 'load' actions.\n";
-		exit(3);
-	}
+    $argObj->unshiftUnnamed('@self');
+    if(!in_array($argObj->getAction(), array("install", "load"))) {
+        echo "Self-extracting sspaks can only use 'install' and 'load' actions.\n";
+        exit(3);
+    }
 }
 */
 
@@ -39,15 +39,15 @@ $action = strtolower($argObj->getAction());
 if(!$action) $action = 'help';
 
 if(isset($allowedActions[$action])) {
-	$method = $allowedActions[$action]['method'];
-	try {
-		$ssPak->$method($argObj);
-	} catch(Exception $e) {
-		echo $e->getMessage() . "\n";
-		exit(4);
-	}
+    $method = $allowedActions[$action]['method'];
+    try {
+        $ssPak->$method($argObj);
+    } catch(Exception $e) {
+        echo $e->getMessage() . "\n";
+        exit(4);
+    }
 } else {
-	echo "Unrecognised action '" . $action . "'.\n";
-	$ssPak->help($argObj);
-	exit(3);
+    echo "Unrecognised action '" . $action . "'.\n";
+    $ssPak->help($argObj);
+    exit(3);
 }

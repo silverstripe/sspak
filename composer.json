@@ -1,19 +1,27 @@
 {
-	"name": "silverstripe/sspak",
-	"description": "CLI tool for saving & loading data in SilverStripe installations",
-	"license": "BSD-3-Clause",
-	"authors": [
-		{
-			"name": "Sam Minnee",
-			"email": "sam@silverstripe.com"
-		}
-	],
-	"autoload": {
-		"classmap": [ "src/" ]
-	},
-	"bin": ["bin-composer/sspak"],
-	"require": {},
-	"require-dev": {
-		"phpunit/phpunit": "^3.7"
-	}
+    "name": "silverstripe/sspak",
+    "description": "CLI tool for saving & loading data in SilverStripe installations",
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Sam Minnee",
+            "email": "sam@silverstripe.com"
+        }
+    ],
+    "autoload": {
+        "classmap": [ "src/" ],
+        "autoload": {
+            "psr-4": {
+                "SilverStripe\\SSPak\\": "src",
+                "SilverStripe\\SSPak\\Tests\\": "tests"
+            }
+        }
+    },
+    "bin": ["bin-composer/sspak"],
+    "require": {
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5",
+        "squizlabs/php_codesniffer": "^3"
+    }
 }

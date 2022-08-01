@@ -2,20 +2,24 @@
 <?php
 
 // Root from which to refer to src/
-if(!defined('PACKAGE_ROOT')) define('PACKAGE_ROOT', dirname(dirname(__FILE__)) . '/');
+// if(!defined('PACKAGE_ROOT')) define('PACKAGE_ROOT', dirname(dirname(__FILE__)) . '/');
 
-require_once(PACKAGE_ROOT . 'src/FilesystemEntity.php');
-require_once(PACKAGE_ROOT . 'src/SSPakFile.php');
+// require_once(PACKAGE_ROOT . 'src/FilesystemEntity.php');
+// require_once(PACKAGE_ROOT . 'src/SSPakFile.php');
+
+require 'vendor/autoload.php';
+
+use SilverStripe\SSPak\SSPakFile;
 
 if(empty($_SERVER['argv'][1])) {
-	$pharFile = dirname(dirname(__FILE__))."/build/sspak.phar";
+    $pharFile = dirname(dirname(__FILE__))."/build/sspak.phar";
 } else {
-	$pharFile = $_SERVER['argv'][1];
+    $pharFile = $_SERVER['argv'][1];
 }
 
 if(!file_exists(dirname($pharFile))) {
-	echo "Creating directory " . dirname($pharFile) . "...\n";
-	mkdir(dirname($pharFile));
+    echo "Creating directory " . dirname($pharFile) . "...\n";
+    mkdir(dirname($pharFile));
 }
 
 echo "Building sspak executable $pharFile\n";
