@@ -5,17 +5,17 @@ echo "Downloading...\n";
 $sspak = file_get_contents("http://silverstripe.github.io/sspak/sspak.phar");
 
 if(!empty($_SERVER['argv'][1])) {
-	$destFolderArg = $_SERVER['argv'][1];
-	$CLI_destFolderArg = escapeshellarg($destFolderArg);
-	// Rationalise destfolder (parse ~, etc)
-	$destFolder = trim(`cd $CLI_destFolderArg && pwd`);
-	if(!$destFolder) {
-		echo "ERROR: Can't find folder $destFolderArg!\n";
-		die();
-	}
+    $destFolderArg = $_SERVER['argv'][1];
+    $CLI_destFolderArg = escapeshellarg($destFolderArg);
+    // Rationalise destfolder (parse ~, etc)
+    $destFolder = trim(`cd $CLI_destFolderArg && pwd`);
+    if(!$destFolder) {
+        echo "ERROR: Can't find folder $destFolderArg!\n";
+        die();
+    }
 
 } else {
-	$destFolder = getcwd();
+    $destFolder = getcwd();
 }
 
 // Write to /tmp
@@ -27,9 +27,9 @@ echo "Copying to " . realpath($destFolder) . "...";
 
 // Write directly, or via sudo, depending on access writes
 if(is_writable($destFolder)) {
-	rename("/tmp/sspak", "$destFolder/sspak");
+    rename("/tmp/sspak", "$destFolder/sspak");
 } else {
-	passthru("sudo mv /tmp/sspak " . escapeshellarg($destFolder));
+    passthru("sudo mv /tmp/sspak " . escapeshellarg($destFolder));
 }
 
 echo"\nDone! Run 'sspak help' to get started.\n\n";
