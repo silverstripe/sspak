@@ -25,13 +25,20 @@ By convention, the file should have the extension `.sspak` for non-executable ve
 
 You can run the installation script one of three ways.
 
-### Composer
+### Composer (recommended)
 
 You can install this package globally with Composer (ensure your composer bin is in your system path):
 
     $> composer global require silverstripe/sspak:dev-master
 
+You can also require it directly in your project
+
+    $> composer require --dev silverstripe/sspak
+    $> vendor/bin/sspak <commands>
+
 ### cURL
+
+**Note: the downloaded sspak.phar may be out of date**
 
 If you have cURL, run this command (everything except for the `$>` part):
 
@@ -45,6 +52,8 @@ For example, this would also work:
 	$> curl -sS https://silverstripe.github.io/sspak/install | sudo php
 
 ### Manually
+
+**Note: the downloaded sspak.phar may be out of date**
 
 If you prefer not to use the installer, you can download the script and copy it to your executable path as follows:
 
@@ -131,6 +140,10 @@ Save all while using a custom TMP folder (make sure the folder exists and is wri
 ## Caveats
 
 If you don't have PKI passwordless log-in into remote servers, you will be asked for your log-in a few times.
+
+## Notes
+
+When using sspak with some versions of mysql you may see the output `mysqldump: unknown variable 'column-statistics=0'`. It is safe to just ignore this.
 
 ## How it works
 
