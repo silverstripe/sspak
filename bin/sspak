@@ -35,8 +35,8 @@ $ssPak = new SSPak(new Executor);
 $allowedActions = $ssPak->getActions();
 
 // Action dispatch - one class per action
-$action = strtolower($argObj->getAction());
-if(!$action) $action = 'help';
+// If there's an action, lowercase it, if not set to help
+$action = $argObj->getAction() ? strtolower($argObj->getAction()): 'help';
 
 if(isset($allowedActions[$action])) {
 	$method = $allowedActions[$action]['method'];
